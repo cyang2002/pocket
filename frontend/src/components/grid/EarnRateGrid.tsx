@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useCardGrid } from '@/hooks/useCardGrid'
 import { GridFilters } from './GridFilters'
 import { CardTile } from './CardTile'
@@ -36,7 +36,12 @@ function useWallet() {
     })
   }, [])
 
-  return { wallet, add, remove }
+  const clear = useCallback(() => {
+    localStorage.setItem('pocket_wallet', JSON.stringify([]))
+    setWallet([])
+  }, [])
+
+  return { wallet, add, remove, clear }
 }
 
 export function EarnRateGrid() {
@@ -49,7 +54,19 @@ export function EarnRateGrid() {
   const [showWallet, setShowWallet] = useState(() => {
     try { return localStorage.getItem('pocket_show_wallet') !== 'false' } catch { return true }
   })
-  const { wallet, add: addToWallet, remove: removeFromWallet } = useWallet()
+  const { wallet, add: addToWallet, remove: removeFromWallet, clear: clearWallet } = useWallet()
+
+  const [isCardDragging, setIsCardDragging] = useState(false)
+  useEffect(() => {
+    const onStart = () => setIsCardDragging(true)
+    const onEnd = () => setIsCardDragging(false)
+    document.addEventListener('dragstart', onStart)
+    document.addEventListener('dragend', onEnd)
+    return () => {
+      document.removeEventListener('dragstart', onStart)
+      document.removeEventListener('dragend', onEnd)
+    }
+  }, [])
 
   const { data, isLoading, isError } = useCardGrid({})
 
@@ -260,13 +277,17 @@ export function EarnRateGrid() {
 
       {/* Wallet sidebar */}
       <div
-        className="flex-shrink-0 border-l border-primary/25 overflow-hidden transition-[width] duration-200 ease-out"
+        className={`flex-shrink-0 border-l overflow-hidden transition-[width,border-color] duration-200 ease-out ${
+          isCardDragging && showWallet ? 'border-primary/60' : 'border-primary/25'
+        }`}
         style={{ width: showWallet ? sidebarWidth : 0 }}
       >
         <WalletPanel
           walletCards={walletCards}
           onRemove={removeFromWallet}
           onDrop={addToWallet}
+          onClearAll={clearWallet}
+          isCardDragging={isCardDragging}
         />
       </div>
     </div>

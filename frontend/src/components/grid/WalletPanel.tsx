@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { formatCategory, formatIssuer, CATEGORIES, rateColorClass, getTopRates } from '@/lib/constants'
+import { formatCategory, formatIssuer, CATEGORIES, rateColorClass } from '@/lib/constants'
 import { SectionHeader } from '@/components/ui/section-header'
 import type { CardGridItem } from '@/types/api'
 
@@ -8,14 +8,14 @@ interface WalletPanelProps {
   walletCards: CardGridItem[]
   onRemove: (cardId: string) => void
   onDrop: (cardId: string) => void
+  onClearAll: () => void
+  isCardDragging?: boolean
 }
 
 type ViewMode = 'carousel' | 'list' | 'grid'
 
 
 function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }) {
-  const topRates = getTopRates(card.earnRates, 1)
-
   return (
     <div
       className={`w-full h-full rounded border relative overflow-hidden select-none
@@ -24,7 +24,7 @@ function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }
           : 'bg-card border-border'
         }`}
     >
-      <div className="relative h-full px-3 pt-2.5 pb-2 flex flex-col justify-between">
+      <div className="relative h-full px-3 pt-2.5 pb-2 flex flex-col">
         <div className="flex items-start justify-between gap-1">
           <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
             {formatIssuer(card.issuer)}
@@ -33,18 +33,61 @@ function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }
             {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
           </span>
         </div>
-        <p className="text-xs font-medium leading-snug text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
-          {card.name}
-        </p>
-        <div className="flex flex-wrap gap-1">
-          {topRates.map(([cat, val]) => (
-            <span key={cat} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
-              {formatCategory(cat)} {val}×
-            </span>
-          ))}
+        <div className="flex-1 flex items-center">
+          <p className="text-xs font-medium leading-snug text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
+            {card.name}
+          </p>
         </div>
       </div>
     </div>
+  )
+}
+
+function HoldRemoveButton({ onRemove, onClearAll, className }: { onRemove: () => void; onClearAll: () => void; className?: string }) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [holding, setHolding] = useState(false)
+  const firedRef = useRef(false)
+
+  function startHold(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    firedRef.current = false
+    warnTimerRef.current = setTimeout(() => setHolding(true), 300)
+    timerRef.current = setTimeout(() => {
+      firedRef.current = true
+      setHolding(false)
+      onClearAll()
+    }, 800)
+  }
+
+  function cancel() {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (warnTimerRef.current) clearTimeout(warnTimerRef.current)
+    setHolding(false)
+  }
+
+  function endHold(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const wasFired = firedRef.current
+    cancel()
+    if (!wasFired) onRemove()
+    firedRef.current = false
+  }
+
+  return (
+    <button
+      onMouseDown={startHold}
+      onMouseUp={endHold}
+      onMouseLeave={cancel}
+      title="Hold to clear entire wallet"
+      className={`text-xs transition-colors select-none ${
+        holding ? 'text-destructive font-semibold' : 'text-muted-foreground/60 hover:text-destructive'
+      } ${className ?? ''}`}
+    >
+      {holding ? 'Clear all?' : 'Remove'}
+    </button>
   )
 }
 
@@ -77,7 +120,7 @@ function IconGrid() {
   )
 }
 
-export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps) {
+export function WalletPanel({ walletCards, onRemove, onDrop, onClearAll, isCardDragging }: WalletPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState(() => {
     try { return Math.max(0, Number(localStorage.getItem('pocket_wallet_focused')) || 0) } catch { return 0 }
@@ -268,6 +311,8 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
     </div>
   )
 
+  const showDrop = isDragOver || !!isCardDragging
+
   return (
     <aside ref={panelRef} className="flex flex-col h-full">
 
@@ -307,12 +352,20 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
           onDragOver={handleDragOver}
           onDragLeave={() => setIsDragOver(false)}
           onDrop={handleDrop}
-          className={`mx-3 mt-3 rounded border-2 border-dashed transition-all duration-150 py-10 flex-1
-            ${isDragOver ? 'border-primary bg-primary/5' : 'border-border'}`}
+          className={`relative mx-3 mt-3 rounded border-2 border-dashed transition-all duration-150 py-10 flex-1
+            ${showDrop ? 'border-primary bg-primary/5' : 'border-border'}`}
         >
-          <p className="text-center text-xs text-muted-foreground/60 leading-relaxed px-4">
-            Drag cards here<br />to build your wallet
-          </p>
+          {showDrop ? (
+            <div className="absolute inset-0 rounded backdrop-blur-sm bg-primary/5 flex items-center justify-center pointer-events-none">
+              <p className="text-xs text-primary font-semibold bg-background/90 px-3.5 py-1.5 rounded-full border border-primary/30 shadow-sm">
+                Drop to add
+              </p>
+            </div>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground/60 leading-relaxed px-4">
+              Drag cards here<br />to build your wallet
+            </p>
+          )}
         </div>
 
       ) : viewMode === 'carousel' ? (
@@ -324,7 +377,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
             onMouseDown={onCarouselMouseDown}
-            className={`relative flex-shrink-0 transition-colors duration-150 ${isDragOver ? 'bg-primary/5' : ''}`}
+            className="relative flex-shrink-0"
             style={{
               height: carouselHeight,
               perspective: '900px',
@@ -377,9 +430,9 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
               ›
             </button>
 
-            {isDragOver && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center">
-                <p className="text-xs text-primary font-medium bg-background/80 px-3 py-1.5 rounded-full border border-primary/30">
+            {showDrop && (
+              <div className="absolute inset-0 z-50 backdrop-blur-sm bg-primary/5 flex items-center justify-center pointer-events-none">
+                <p className="text-xs text-primary font-semibold bg-background/90 px-3.5 py-1.5 rounded-full border border-primary/30 shadow-sm">
                   Drop to add
                 </p>
               </div>
@@ -421,12 +474,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
                 >
                   Details →
                 </Link>
-                <button
-                  onClick={() => onRemove(focusedCard.cardId)}
-                  className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors"
-                >
-                  Remove
-                </button>
+                <HoldRemoveButton onRemove={() => onRemove(focusedCard.cardId)} onClearAll={onClearAll} />
               </div>
             </div>
           )}
@@ -440,49 +488,41 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
         /* ── List view ── */
         <>
           <div
-            className="overflow-y-auto flex-shrink-0"
+            className="overflow-y-auto flex-shrink-0 relative"
             onDragOver={handleDragOver}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
           >
+            {showDrop && (
+              <div className="absolute inset-0 z-50 backdrop-blur-sm bg-primary/5 flex items-center justify-center pointer-events-none">
+                <p className="text-xs text-primary font-semibold bg-background/90 px-3.5 py-1.5 rounded-full border border-primary/30 shadow-sm">
+                  Drop to add
+                </p>
+              </div>
+            )}
             <div className="px-3 py-2 space-y-1">
-              {walletCards.map(card => {
-                const topRates = getTopRates(card.earnRates, 2)
-                return (
-                  <Link
-                    key={card.cardId}
-                    to={`/cards/${card.cardId}`}
-                    className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-border bg-card hover:bg-secondary transition-colors"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none mb-1">
-                        {formatIssuer(card.issuer)}
-                      </p>
-                      <p className="text-sm font-medium text-foreground truncate leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
-                        {card.name}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {topRates.map(([cat, val]) => (
-                          <span key={cat} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
-                            {formatCategory(cat)} {val}×
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className={`text-xs tabular-nums ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
-                        {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
-                      </span>
-                      <button
-                        onClick={e => { e.preventDefault(); onRemove(card.cardId) }}
-                        className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </Link>
-                )
-              })}
+              {walletCards.map(card => (
+                <Link
+                  key={card.cardId}
+                  to={`/cards/${card.cardId}`}
+                  className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-border bg-card hover:bg-secondary transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none mb-1">
+                      {formatIssuer(card.issuer)}
+                    </p>
+                    <p className="text-sm font-medium text-foreground truncate leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
+                      {card.name}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className={`text-xs tabular-nums ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
+                      {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
+                    </span>
+                    <HoldRemoveButton onRemove={() => onRemove(card.cardId)} onClearAll={onClearAll} className="text-[10px]" />
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
           <div className="grid grid-cols-3 items-center px-3 py-1.5 flex-shrink-0 border-b border-border/40">
@@ -497,11 +537,18 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
         /* ── Grid view ── */
         <>
           <div
-            className="overflow-y-auto flex-shrink-0"
+            className="overflow-y-auto flex-shrink-0 relative"
             onDragOver={handleDragOver}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={handleDrop}
           >
+            {showDrop && (
+              <div className="absolute inset-0 z-50 backdrop-blur-sm bg-primary/5 flex items-center justify-center pointer-events-none">
+                <p className="text-xs text-primary font-semibold bg-background/90 px-3.5 py-1.5 rounded-full border border-primary/30 shadow-sm">
+                  Drop to add
+                </p>
+              </div>
+            )}
             <div className="px-3 py-2 grid grid-cols-2 gap-2">
               {walletCards.map(card => (
                 <div key={card.cardId} className="relative group">
@@ -519,12 +566,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
                     >
                       Details →
                     </Link>
-                    <button
-                      onClick={() => onRemove(card.cardId)}
-                      className="text-[10px] text-muted-foreground/60 hover:text-destructive transition-colors"
-                    >
-                      Remove
-                    </button>
+                    <HoldRemoveButton onRemove={() => onRemove(card.cardId)} onClearAll={onClearAll} className="text-[10px]" />
                   </div>
                 </div>
               ))}
@@ -586,7 +628,7 @@ function CoverageList({
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-foreground/80 truncate">{formatCategory(category)}</span>
                 <span className="text-xs font-semibold px-1.5 py-1 rounded-sm leading-none flex-shrink-0 bg-stone-100 text-stone-400">
-                  —
+                  -
                 </span>
               </div>
               <span className="text-[11px] text-muted-foreground/60 block mt-0.5">No card</span>

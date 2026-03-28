@@ -34,7 +34,7 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
     >
 
       {/* Card content — always fully visible */}
-      <div className="relative h-full px-5 pt-4 pb-10 flex flex-col gap-2">
+      <div className="relative h-full px-5 pt-4 pb-2 flex flex-col gap-2">
         {/* Header row: issuer + fee */}
         <div className="flex items-start justify-between gap-2">
           <span className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
@@ -45,7 +45,7 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
           </span>
         </div>
 
-        {/* Card name */}
+        {/* Card name — flex-1 centers it between header and badges */}
         <p
           className="flex-1 text-[15px] font-medium leading-snug text-foreground flex items-center"
           style={{ fontFamily: 'var(--font-display)' }}
@@ -53,8 +53,8 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
           {card.name}
         </p>
 
-        {/* Earn rate badges */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* Earn rate badges — pb-9 reserves space for the hover action bar */}
+        <div className="flex flex-wrap gap-1.5 pb-9">
           {topRates.map(([cat, val]) => (
             <span
               key={cat}
