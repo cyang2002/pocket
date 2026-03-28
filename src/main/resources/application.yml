@@ -7,7 +7,7 @@ spring:
     serialization:
       write-enums-using-to-string: false
   datasource:
-    url: jdbc:sqlite:${DB_PATH:/Users/christopher/Documents/code/pocket-scraper/data/cardoptimizer.db}
+    url: jdbc:sqlite:${DB_PATH:./data/cardoptimizer.db}
     driver-class-name: org.sqlite.JDBC
     hikari:
       connection-init-sql: "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
@@ -34,4 +34,4 @@ server:
 
 logging:
   level:
-    com.cardoptimizer.api: DEBUG
+    com.cardoptimizer.api: INFO

@@ -1,6 +1,6 @@
 import type { CardGridItem, EarnRateDetail, GridFilters } from '@/types/api'
 
-const BASE = 'http://localhost:8080'
+const BASE = import.meta.env.VITE_API_BASE_URL
 
 export async function fetchCardGrid(filters: GridFilters = {}): Promise<CardGridItem[]> {
   const params = new URLSearchParams()
@@ -32,11 +32,5 @@ export async function fetchCompare(ids: string[]): Promise<CardGridItem[]> {
   const params = new URLSearchParams({ ids: ids.join(',') })
   const res = await fetch(`${BASE}/api/cards/compare?${params}`)
   if (!res.ok) throw new Error(`Compare fetch failed: ${res.status}`)
-  return res.json()
-}
-
-export async function fetchCategories(): Promise<string[]> {
-  const res = await fetch(`${BASE}/api/categories`)
-  if (!res.ok) throw new Error(`Categories fetch failed: ${res.status}`)
   return res.json()
 }

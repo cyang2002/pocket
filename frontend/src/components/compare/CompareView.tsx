@@ -2,10 +2,8 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useCompare } from '@/hooks/useCompare'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CATEGORIES, formatCategory } from '@/lib/constants'
 import type { CardGridItem } from '@/types/api'
-
-const CATEGORIES = ["business","dining","drugstore","entertainment","gas","groceries",
-  "home_improvement","online_shopping","other","streaming","transit","travel"]
 
 export function CompareView() {
   const [searchParams] = useSearchParams()
@@ -92,11 +90,10 @@ export function CompareView() {
               </td>
             </tr>
             {CATEGORIES.map(cat => {
-              const label = cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
               const maxVal = maxByCategory.get(cat)
               return (
                 <tr key={cat} className="border-t border-border">
-                  <td className="text-xs font-semibold py-3 px-4 sticky left-0 bg-background">{label}</td>
+                  <td className="text-xs font-semibold py-3 px-4 sticky left-0 bg-background">{formatCategory(cat)}</td>
                   {cards.map(card => {
                     const val = card.earnRates[cat]
                     const isBest = val != null && maxVal != null && val === maxVal && maxVal > 0

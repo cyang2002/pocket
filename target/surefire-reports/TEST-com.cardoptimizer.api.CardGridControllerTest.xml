@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cardoptimizer.api.EarnRateServiceTest" time="0.005" tests="5" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cardoptimizer.api.CardGridControllerTest" time="1.578" tests="5" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -49,7 +49,7 @@
     <property name="localRepository" value="/Users/christopher/.m2/repository"/>
     <property name="java.vendor.url.bug" value="https://github.com/Homebrew/homebrew-core/issues"/>
     <property name="java.io.tmpdir" value="/var/folders/_p/xb171jp905vf99r4bbzfcs4c0000gn/T/"/>
-    <property name="com.zaxxer.hikari.pool_number" value="2"/>
+    <property name="com.zaxxer.hikari.pool_number" value="1"/>
     <property name="java.version" value="25.0.2"/>
     <property name="user.dir" value="/Users/christopher/Documents/code/pocket"/>
     <property name="os.arch" value="aarch64"/>
@@ -68,9 +68,47 @@
     <property name="java.class.version" value="69.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[card-api] "/>
   </properties>
-  <testcase name="getCanonicalCategories_containsExpectedValues" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getEarnRates_includesLastVerifiedInDto" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getCanonicalCategories_returnsAll12" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getEarnRates_returnsEmptyListForUnknownCard" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.0"/>
-  <testcase name="getEarnRates_mapsModelToDto" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
+  <testcase name="compare_returnsRequestedCards" classname="com.cardoptimizer.api.CardGridControllerTest" time="0.497">
+    <system-out><![CDATA[18:24:57.586 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.cardoptimizer.api.CardGridControllerTest]: CardGridControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+18:24:57.624 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.cardoptimizer.api.CardApiApplication for test class com.cardoptimizer.api.CardGridControllerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.3)
+
+2026-03-15T18:24:57.727-05:00  INFO 37783 --- [card-api] [           main] c.c.api.CardGridControllerTest           : Starting CardGridControllerTest using Java 25.0.2 with PID 37783 (started by christopher in /Users/christopher/Documents/code/pocket)
+2026-03-15T18:24:57.727-05:00 DEBUG 37783 --- [card-api] [           main] c.c.api.CardGridControllerTest           : Running with Spring Boot v3.2.3, Spring v6.1.4
+2026-03-15T18:24:57.728-05:00  INFO 37783 --- [card-api] [           main] c.c.api.CardGridControllerTest           : No active profile set, falling back to 1 default profile: "default"
+2026-03-15T18:24:57.891-05:00  INFO 37783 --- [card-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+2026-03-15T18:24:57.907-05:00  INFO 37783 --- [card-api] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 14 ms. Found 1 JDBC repository interface.
+2026-03-15T18:24:58.131-05:00  INFO 37783 --- [card-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-15T18:24:58.351-05:00  INFO 37783 --- [card-api] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.sqlite.jdbc4.JDBC4Connection@3313d477
+2026-03-15T18:24:58.352-05:00  INFO 37783 --- [card-api] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-15T18:24:58.376-05:00  INFO 37783 --- [card-api] [           main] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-03-15T18:24:58.376-05:00  INFO 37783 --- [card-api] [           main] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-03-15T18:24:58.376-05:00  INFO 37783 --- [card-api] [           main] o.f.c.internal.license.VersionPrinter    : 
+2026-03-15T18:24:58.380-05:00  INFO 37783 --- [card-api] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:sqlite:/Users/christopher/Documents/code/pocket-scraper/data/cardoptimizer.db (SQLite 3.51)
+2026-03-15T18:24:58.389-05:00  INFO 37783 --- [card-api] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.004s)
+2026-03-15T18:24:58.391-05:00  INFO 37783 --- [card-api] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "main": 1
+2026-03-15T18:24:58.391-05:00  INFO 37783 --- [card-api] [           main] o.f.core.internal.command.DbMigrate      : Schema "main" is up to date. No migration necessary.
+2026-03-15T18:24:58.575-05:00  INFO 37783 --- [card-api] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-03-15T18:24:58.575-05:00  INFO 37783 --- [card-api] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-03-15T18:24:58.576-05:00  INFO 37783 --- [card-api] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-03-15T18:24:58.582-05:00  INFO 37783 --- [card-api] [           main] c.c.api.CardGridControllerTest           : Started CardGridControllerTest in 0.925 seconds (process running for 1.202)
+2026-03-15T18:24:59.065-05:00  INFO 37783 --- [card-api] [           main] c.c.api.service.CardDataService          : Fetched 172 cards from GitHub
+]]></system-out>
+    <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (/Users/christopher/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.12/byte-buddy-agent-1.14.12.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+  </testcase>
+  <testcase name="getGrid_filterByIssuer_returnsOnlyChaseCards" classname="com.cardoptimizer.api.CardGridControllerTest" time="0.012"/>
+  <testcase name="getGrid_filterHasEarnRates_excludesEmptyCards" classname="com.cardoptimizer.api.CardGridControllerTest" time="0.005"/>
+  <testcase name="getGrid_gridItemShape_hasRequiredFields" classname="com.cardoptimizer.api.CardGridControllerTest" time="0.009"/>
+  <testcase name="getGrid_returns200AndJsonArray" classname="com.cardoptimizer.api.CardGridControllerTest" time="0.009"/>
 </testsuite>

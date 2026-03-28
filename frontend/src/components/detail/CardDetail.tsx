@@ -3,13 +3,9 @@ import { useCardDetail } from '@/hooks/useCardDetail'
 import { StalenessIndicator } from '@/components/grid/StalenessIndicator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Table, TableHeader, TableBody, TableRow, TableHead, TableCell
-} from '@/components/ui/table'
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { CATEGORIES, formatCategory, isStaleDate } from '@/lib/constants'
 import type { CardDetailFull, EarnRateDetail } from '@/types/api'
-
-const CATEGORIES = ["business","dining","drugstore","entertainment","gas","groceries",
-  "home_improvement","online_shopping","other","streaming","transit","travel"]
 
 export function CardDetail() {
   const { id } = useParams<{ id: string }>()
@@ -40,6 +36,13 @@ export function CardDetail() {
     (earnRates.data ?? []).map(r => [r.category, r])
   )
 
+  const mostRecentVerified = earnRates.data
+    ?.map(r => r.lastVerified)
+    .filter((d): d is string => !!d)
+    .sort()
+    .at(-1)
+  const isStale = isStaleDate(mostRecentVerified)
+
   const firstOffer = cardData.offers?.[0]?.amount?.[0]
 
   return (
@@ -55,7 +58,7 @@ export function CardDetail() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-semibold">{cardData.name}</h1>
-            {cardData.isStale && <StalenessIndicator />}
+            {isStale && <StalenessIndicator />}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             {cardData.issuer}{cardData.network ? ` · ${cardData.network}` : ''}
@@ -85,10 +88,9 @@ export function CardDetail() {
             <TableBody>
               {CATEGORIES.map(cat => {
                 const rate = ratesByCategory.get(cat)
-                const label = cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
                 return (
                   <TableRow key={cat}>
-                    <TableCell className="py-3 px-4 text-sm">{label}</TableCell>
+                    <TableCell className="py-3 px-4 text-sm">{formatCategory(cat)}</TableCell>
                     <TableCell className="py-3 px-4 text-sm">
                       {rate ? `${rate.multiplier}x` : <span className="text-muted-foreground">—</span>}
                     </TableCell>

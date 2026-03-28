@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cardoptimizer.api.EarnRateServiceTest" time="0.005" tests="5" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="com.cardoptimizer.api.CardGridServiceTest" time="0.101" tests="5" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -49,7 +49,7 @@
     <property name="localRepository" value="/Users/christopher/.m2/repository"/>
     <property name="java.vendor.url.bug" value="https://github.com/Homebrew/homebrew-core/issues"/>
     <property name="java.io.tmpdir" value="/var/folders/_p/xb171jp905vf99r4bbzfcs4c0000gn/T/"/>
-    <property name="com.zaxxer.hikari.pool_number" value="2"/>
+    <property name="com.zaxxer.hikari.pool_number" value="1"/>
     <property name="java.version" value="25.0.2"/>
     <property name="user.dir" value="/Users/christopher/Documents/code/pocket"/>
     <property name="os.arch" value="aarch64"/>
@@ -68,9 +68,9 @@
     <property name="java.class.version" value="69.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[card-api] "/>
   </properties>
-  <testcase name="getCanonicalCategories_containsExpectedValues" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getEarnRates_includesLastVerifiedInDto" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getCanonicalCategories_returnsAll12" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
-  <testcase name="getEarnRates_returnsEmptyListForUnknownCard" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.0"/>
-  <testcase name="getEarnRates_mapsModelToDto" classname="com.cardoptimizer.api.EarnRateServiceTest" time="0.001"/>
+  <testcase name="isStale_oldDate_returnsTrue" classname="com.cardoptimizer.api.CardGridServiceTest" time="0.093"/>
+  <testcase name="buildGridResponse_containsAll12Categories" classname="com.cardoptimizer.api.CardGridServiceTest" time="0.003"/>
+  <testcase name="isStale_recentDate_returnsFalse" classname="com.cardoptimizer.api.CardGridServiceTest" time="0.001"/>
+  <testcase name="compare_unknownIdSkipped" classname="com.cardoptimizer.api.CardGridServiceTest" time="0.0"/>
+  <testcase name="isStale_nullLastVerified_returnsTrue" classname="com.cardoptimizer.api.CardGridServiceTest" time="0.0"/>
 </testsuite>

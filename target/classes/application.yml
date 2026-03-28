@@ -7,12 +7,13 @@ spring:
     serialization:
       write-enums-using-to-string: false
   datasource:
-    url: jdbc:sqlite:./data/cardoptimizer.db
+    url: jdbc:sqlite:${DB_PATH:./data/cardoptimizer.db}
     driver-class-name: org.sqlite.JDBC
     hikari:
       connection-init-sql: "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
   flyway:
     enabled: true
+    baseline-on-migrate: true
   sql:
     init:
       mode: never
@@ -25,10 +26,12 @@ cardapi:
     initial-delay-ms: 3600000  # first scheduled eviction after 60 min (not at startup)
   cors:
     allowed-origins: http://localhost:3000,http://localhost:5173
+  staleness:
+    threshold-days: 30
 
 server:
   port: 8080
 
 logging:
   level:
-    com.cardoptimizer.api: DEBUG
+    com.cardoptimizer.api: INFO

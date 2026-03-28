@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.cardoptimizer.api.CardGridControllerTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.578 s -- in com.cardoptimizer.api.CardGridControllerTest

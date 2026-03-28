@@ -9,17 +9,17 @@ Users need to know which card earns the most in each spending category (dining, 
 
 ## Stack
 
-- **Java 21** (Microsoft OpenJDK) + **Spring Boot 3.2** + **Maven 3.9.9**
+- **Java 25** (OpenJDK via Homebrew) + **Spring Boot 3.2** + **Maven 3.9.14**
 - **SQLite** (WAL mode) via HikariCP + **Spring Data JDBC** + **Flyway** migrations
-- **Python 3** scraper (`scraper/`) using crawl4ai + playwright to populate earn rate data
+- **Earn rate data** populated via a controlled external service (not the Python scraper — see Architecture)
 - Data file: `data/cardoptimizer.db` (gitignored, created at runtime)
 
 ## Dev Environment Setup (new machine)
 
 ```bash
-# Java & Maven — must be in PATH
-export JAVA_HOME=~/tools/jdk-21.0.10+7
-export PATH="$JAVA_HOME/bin:~/tools/apache-maven-3.9.9/bin:$PATH"
+# Java & Maven — installed via Homebrew on current machine (macOS, Apple Silicon)
+export JAVA_HOME=/opt/homebrew/Cellar/openjdk/25.0.2/libexec/openjdk.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:/opt/homebrew/Cellar/maven/3.9.14/bin:$PATH"
 
 # Run the API
 cd ~/Documents/Code/card-api && mvn spring-boot:run
@@ -43,19 +43,24 @@ cd scraper && pytest
 - `GET /api/cards/issuers` — distinct issuers sorted
 - `GET /api/cards/summary` — lightweight list (name, issuer, fee, signup bonus)
 
-**Earn rate data (from local SQLite, populated by scraper):**
-- `GET /api/cards/{cardId}/earn-rates` — category earn rates for a card (empty until scraper runs)
+**Earn rate data (from local SQLite, populated by external controlled service):**
+- `GET /api/cards/{cardId}/earn-rates` — category earn rates for a card
 - `GET /api/categories` — the 12 locked canonical category names
+- `GET /api/cards/grid` — all cards with earn rates joined, staleness flag, and filter support
+- `GET /api/cards/compare` — subset of cards for side-by-side comparison
 
 ## Architecture
 
 ```
-GitHub JSON API ──→ CardService (Caffeine cache, 60-min TTL) ──→ /api/cards/*
-SQLite DB        ──→ EarnRateRepository                       ──→ /api/cards/{id}/earn-rates
-Python scraper   ──→ SQLite DB (data/cardoptimizer.db)
+GitHub JSON API       ──→ CardService (Caffeine cache, 60-min TTL) ──→ /api/cards/*
+SQLite DB             ──→ EarnRateRepository                       ──→ /api/cards/{id}/earn-rates
+External service      ──→ SQLite DB (data/cardoptimizer.db)        (populates earn_rates table)
+CardGridService       ──→ joins card data + earn rates             ──→ /api/cards/grid, /api/cards/compare
+React SPA (frontend/) ──→ consumes all endpoints                   ──→ port 5173
 ```
 
 **Upstream card data source:** `andenacitelli/credit-card-bonuses-api` (raw JSON on GitHub)
+**Earn rate population:** External controlled service writes to `earn_rates` table with `last_verified` timestamps; partial coverage, expanding over time
 **CORS origins:** `localhost:3000`, `localhost:5173`
 
 ## Category Taxonomy (locked — do not change)
@@ -63,45 +68,30 @@ Python scraper   ──→ SQLite DB (data/cardoptimizer.db)
 12 canonical categories: `dining`, `travel`, `groceries`, `gas`, `streaming`, `drugstore`,
 `entertainment`, `online_shopping`, `transit`, `home_improvement`, `business`, `other`
 
-Defined in `scraper/categories.yaml`. The Java `GET /api/categories` endpoint returns these statically.
+Defined in `EarnRateService.CANONICAL_CATEGORIES`. The Java `GET /api/categories` endpoint returns these statically.
 
 ## Key Technical Decisions
 
 - **AnsiDialect as `@Bean`** in `JdbcConfig.java` — `spring.data.jdbc.dialect` property doesn't exist in Spring Data JDBC 3.x
 - **WAL mode** via HikariCP `connection-init-sql: PRAGMA journal_mode=WAL` — not in schema SQL
 - **Flyway migration** uses `CREATE TABLE IF NOT EXISTS` so dev and test share the same `data/cardoptimizer.db` without Flyway conflicts
-- **`normalize()` returns `None`** for unmapped strings (not `'other'`) — callers decide handling
-- **SQLite tests use `tmp_path`** fixture (real file path required for WAL mode — in-memory SQLite can't enable WAL)
 - **`EarnRateResponse.lastVerified` is `String`** not `Instant` — SQLite stores as TEXT; avoid dialect-specific mapping failures
-- **`/api/categories` is a static list**, not a DB query — works before scraper runs, prevents schema drift
-- **ID mapping** between upstream API cards and scraped data uses explicit `cardId` matching, not name matching
+- **`/api/categories` is a static list**, not a DB query — works before earn rate data exists, prevents schema drift
+- **ID mapping** between upstream API cards and earn rate data uses explicit `cardId` matching, not name matching
+- **Staleness** — `isStale: true` when `last_verified` is null or older than 30 days (configurable via `cardapi.staleness.threshold-days`)
 
 ## GSD Planning Status
 
 This project uses the GSD workflow. Planning files are in `.planning/` (gitignored — local only).
 
-**Current milestone:** v1.0 | **2 phases total**
+**Current milestone:** v1.0 | **2 phases complete**
 
-| Phase | Status | Plans |
+| Phase | Status | Notes |
 |-------|--------|-------|
-| 1: Data Foundation | In Progress (3/5 plans done) | 01-01 ✓, 01-02 ✓, 01-03 ✓, 01-04 ⏳, 01-05 ○ |
-| 2: Card Discovery UI | Not started | TBD |
+| 1: Data Foundation | Complete | Earn rates populated via external controlled service |
+| 2: Card Discovery UI | Complete (2026-03-15) | Grid, filters, detail, compare all working |
 
-**Where we left off (2026-03-13):**
-Phase 1, plan 01-04 — blocked at a **human checkpoint**. The Chase/Amex scraper code (plan 01-04) requires DOM inspection of live card pages before CSS selectors can be written. Need to inspect these pages in DevTools:
-- `https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred`
-- `https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited`
-- `https://www.americanexpress.com/us/credit-cards/card/gold-card/`
-- `https://www.americanexpress.com/us/credit-cards/card/blue-cash-preferred-card-from-american-express/`
-
-Find the repeating earn rate rows, copy CSS selectors for: base row, multiplier text, category label, caveats. Then resume `/gsd:execute-phase 1` and paste the selectors when prompted.
-
-**Known blocker:** Unknown whether Chase/Amex pages require Playwright vs. plain HTTP — validate during the DOM spike.
-
-## Resuming on a New Machine
-
-1. Clone repo and set up Java/Maven/Python (see Dev Environment Setup above)
-2. Install GSD: follow instructions at `~/.claude/get-shit-done/` (or reinstall)
-3. Re-initialize `.planning/` state: run `/gsd:progress` — GSD will detect missing STATE.md and offer to reconstruct from the ROADMAP.md and plan files that are in the repo
-4. Resume phase 1: `/gsd:execute-phase 1` — it will skip completed plans (01-01 through 01-03 have SUMMARY.md files) and resume at 01-04
-5. Provide DOM inspection results when prompted at the 01-04 checkpoint
+**Known tech debt (tracked in v1.0-MILESTONE-AUDIT.md):**
+- `CardDetail` staleness badge always hidden — `fetchCardById` returns `CreditCard` (no `isStale`); fix by deriving staleness from earn rates query
+- `fetchCategories` in `lib/api.ts` is unused — components hardcode the 12-category array inline
+- Server-side filter params never sent to `/api/cards/grid` — client-side filtering only

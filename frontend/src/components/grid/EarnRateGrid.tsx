@@ -7,16 +7,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CATEGORIES, formatCategory } from '@/lib/constants'
 import type { GridFilters as GridFiltersType } from '@/types/api'
-
-const CATEGORIES = [
-  'business', 'dining', 'drugstore', 'entertainment', 'gas', 'groceries',
-  'home_improvement', 'online_shopping', 'other', 'streaming', 'transit', 'travel'
-]
-
-function formatCategory(cat: string): string {
-  return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
 
 export function EarnRateGrid() {
   const navigate = useNavigate()
