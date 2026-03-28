@@ -6,6 +6,16 @@ spring:
       fail-on-unknown-properties: false
     serialization:
       write-enums-using-to-string: false
+  datasource:
+    url: jdbc:sqlite:./data/cardoptimizer.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      connection-init-sql: "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
+  flyway:
+    enabled: true
+  sql:
+    init:
+      mode: never
 
 cardapi:
   github:
