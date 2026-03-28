@@ -39,6 +39,17 @@ export function rateNumColor(val: number | null | undefined): string {
   return 'text-foreground'
 }
 
+/** Extract top earn rates from a card's earnRates map */
+export function getTopRates(
+  earnRates: Record<string, number | null>,
+  count = 3
+): [string, number][] {
+  return (Object.entries(earnRates) as [string, number | null][])
+    .filter((e): e is [string, number] => e[1] != null && e[1] > 0)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, count)
+}
+
 export function isStaleDate(dateStr: string | null | undefined, thresholdDays = 30): boolean {
   if (!dateStr) return true
   const cutoff = new Date()
