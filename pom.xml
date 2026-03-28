@@ -52,6 +52,23 @@
             <artifactId>httpclient5</artifactId>
         </dependency>
 
+        <!-- SQLite JDBC driver -->
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.51.0.0</version>
+        </dependency>
+        <!-- Spring Data JDBC (simpler than JPA — no Hibernate dirty checking) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jdbc</artifactId>
+        </dependency>
+        <!-- Flyway community edition (SQLite supported) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
