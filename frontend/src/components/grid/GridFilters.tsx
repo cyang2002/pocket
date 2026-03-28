@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { CATEGORIES, formatCategory } from '@/lib/constants'
@@ -9,10 +10,23 @@ interface GridFiltersProps {
   issuers: string[]
   sortCol: string | null
   onSortChange: (col: string | null) => void
+  search: string
+  onSearchChange: (val: string) => void
 }
 
-export function GridFilters({ filters, onFilterChange, issuers, sortCol, onSortChange }: GridFiltersProps) {
-  const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined || sortCol)
+export function GridFilters({ filters, onFilterChange, issuers, sortCol, onSortChange, search, onSearchChange }: GridFiltersProps) {
+  const [inputValue, setInputValue] = useState(search)
+  const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined || sortCol || search)
+
+  useEffect(() => {
+    const t = setTimeout(() => onSearchChange(inputValue), 200)
+    return () => clearTimeout(t)
+  }, [inputValue]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync if parent clears search (e.g. Clear all)
+  useEffect(() => {
+    if (search === '') setInputValue('')
+  }, [search])
 
   return (
     <div className="px-8 sm:px-16 py-3 border-b border-border flex flex-wrap gap-2 items-center">
@@ -95,11 +109,25 @@ export function GridFilters({ filters, onFilterChange, issuers, sortCol, onSortC
         <Button
           variant="ghost"
           className="h-8 px-2 text-xs text-muted-foreground"
-          onClick={() => { onFilterChange({}); onSortChange(null) }}
+          onClick={() => { onFilterChange({}); onSortChange(null); onSearchChange('') }}
         >
           Clear all
         </Button>
       )}
+
+      <div className="relative ml-auto">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8 8l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder="Search cards…"
+          className="h-8 pl-8 pr-3 text-xs rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 w-56"
+        />
+      </div>
     </div>
   )
 }

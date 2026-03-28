@@ -42,7 +42,13 @@ function useWallet() {
 export function EarnRateGrid() {
   const [filters, setFilters] = useState<GridFiltersType>({})
   const [sortCol, setSortCol] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(true)
+  const [search, setSearch] = useState('')
+  const [showFilters, setShowFilters] = useState(() => {
+    try { return localStorage.getItem('pocket_show_filters') !== 'false' } catch { return true }
+  })
+  const [showWallet, setShowWallet] = useState(() => {
+    try { return localStorage.getItem('pocket_show_wallet') !== 'false' } catch { return true }
+  })
   const { wallet, add: addToWallet, remove: removeFromWallet } = useWallet()
 
   const { data, isLoading, isError } = useCardGrid({})
@@ -54,14 +60,16 @@ export function EarnRateGrid() {
 
   const filteredData = useMemo(() => {
     if (!data) return []
+    const q = search.trim().toLowerCase()
     return data.filter(card => {
       if (filters.issuer && card.issuer !== filters.issuer) return false
       if (filters.isBusiness !== undefined && card.isBusiness !== filters.isBusiness) return false
       if (filters.network && card.network !== filters.network) return false
       if (filters.maxFee !== undefined && card.annualFee > filters.maxFee) return false
+      if (q && !card.name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [data, filters])
+  }, [data, filters, search])
 
   const sortedData = useMemo(() => {
     if (!sortCol) return filteredData
@@ -72,7 +80,11 @@ export function EarnRateGrid() {
     })
   }, [filteredData, sortCol])
 
-  const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined || sortCol)
+  const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined || sortCol || search)
+  const activeFilterCount = useMemo(() =>
+    [filters.issuer, filters.isBusiness !== undefined, filters.network, filters.maxFee !== undefined, sortCol, search].filter(Boolean).length,
+    [filters, sortCol, search]
+  )
 
   const walletCards = useMemo(() => {
     if (!data) return []
@@ -125,7 +137,7 @@ export function EarnRateGrid() {
       <div className="flex-1 min-w-0 overflow-y-auto">
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="px-8 sm:px-16 py-4 flex items-center gap-3 flex-wrap">
+          <div className="px-8 sm:px-16 py-3 flex items-center gap-3 flex-wrap">
             <SectionHeader title="Browse" />
             {!isLoading && !isError && data && (
               <span className="text-sm text-muted-foreground tabular-nums">
@@ -139,9 +151,10 @@ export function EarnRateGrid() {
               </span>
             )}
             {!isLoading && !isError && (
+              <div className="ml-auto flex items-center gap-2">
               <button
-                onClick={() => setShowFilters(v => !v)}
-                className={`ml-auto flex items-center gap-2 h-8 px-3 rounded border text-xs font-semibold transition-colors
+                onClick={() => setShowFilters(v => { const next = !v; localStorage.setItem('pocket_show_filters', String(next)); return next })}
+                className={`flex items-center gap-2 h-8 px-3 rounded border text-xs font-semibold transition-colors
                   ${showFilters
                     ? 'bg-secondary border-border text-foreground'
                     : hasActiveFilters
@@ -156,10 +169,34 @@ export function EarnRateGrid() {
                 {hasActiveFilters && (
                   <span className={`text-[10px] font-bold tabular-nums px-1 py-0.5 rounded-sm leading-none
                     ${showFilters ? 'bg-primary/15 text-primary' : 'bg-primary text-primary-foreground'}`}>
-                    {[filters.issuer, filters.isBusiness !== undefined, filters.network, filters.maxFee !== undefined, sortCol].filter(Boolean).length}
+                    {activeFilterCount}
                   </span>
                 )}
               </button>
+              <button
+                onClick={() => setShowWallet(v => { const next = !v; localStorage.setItem('pocket_show_wallet', String(next)); return next })}
+                className={`flex items-center gap-2 h-8 px-3 rounded border text-xs font-semibold transition-colors
+                  ${showWallet
+                    ? 'bg-secondary border-border text-foreground'
+                    : wallet.length > 0
+                      ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
+                      : 'bg-background border-border text-foreground hover:bg-secondary'
+                  }`}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <rect x="1" y="3.5" width="10" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M3 3.5V2.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.5"/>
+                  <circle cx="9" cy="7" r="1" fill="currentColor"/>
+                </svg>
+                Wallet
+                {wallet.length > 0 && (
+                  <span className={`text-[10px] font-bold tabular-nums px-1 py-0.5 rounded-sm leading-none
+                    ${showWallet ? 'bg-primary/15 text-primary' : 'bg-primary text-primary-foreground'}`}>
+                    {wallet.length - 1}
+                  </span>
+                )}
+              </button>
+              </div>
             )}
           </div>
         </div>
@@ -169,12 +206,12 @@ export function EarnRateGrid() {
           style={{ gridTemplateRows: showFilters ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden">
-            <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} sortCol={sortCol} onSortChange={setSortCol} />
+            <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} sortCol={sortCol} onSortChange={setSortCol} search={search} onSearchChange={setSearch} />
           </div>
         </div>
 
         {isLoading && (
-          <div className="px-8 sm:px-16 py-6 grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="px-8 sm:px-16 py-8 grid grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 9 }).map((_, i) => (
               <Skeleton key={i} className="w-full rounded" style={{ aspectRatio: '85.6 / 54' }} />
             ))}
@@ -190,14 +227,14 @@ export function EarnRateGrid() {
         )}
 
         {!isLoading && !isError && filteredData.length === 0 && data && data.length > 0 && (
-          <div className="px-8 py-20 text-center">
+          <div className="px-8 sm:px-16 py-20 text-center">
             <p className="text-sm font-semibold">No cards match</p>
             <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters.</p>
           </div>
         )}
 
         {!isLoading && !isError && sortedData.length > 0 && (
-          <div className="px-8 sm:px-16 py-6 grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="px-8 sm:px-16 py-8 grid grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedData.map(card => (
               <CardTile
                 key={card.cardId}
@@ -212,15 +249,20 @@ export function EarnRateGrid() {
       </div>
 
       {/* Resize handle */}
-      <div
-        onMouseDown={handleResizeStart}
-        className="w-1 flex-shrink-0 relative cursor-col-resize group"
-      >
-        <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-primary/20 transition-colors duration-150" />
-      </div>
+      {showWallet && (
+        <div
+          onMouseDown={handleResizeStart}
+          className="w-1 flex-shrink-0 relative cursor-col-resize group"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-primary/20 transition-colors duration-150" />
+        </div>
+      )}
 
       {/* Wallet sidebar */}
-      <div className="flex-shrink-0 border-l border-primary/25 overflow-hidden" style={{ width: sidebarWidth }}>
+      <div
+        className="flex-shrink-0 border-l border-primary/25 overflow-hidden transition-[width] duration-200 ease-out"
+        style={{ width: showWallet ? sidebarWidth : 0 }}
+      >
         <WalletPanel
           walletCards={walletCards}
           onRemove={removeFromWallet}

@@ -32,14 +32,6 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
         }`}
       style={{ aspectRatio: '85.6 / 54' }}
     >
-      {/* Dot-grid texture */}
-      <div
-        className="absolute inset-0 rounded opacity-[0.35] pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, oklch(70% 0.01 75) 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-        }}
-      />
 
       {/* Card content — always fully visible */}
       <div className="relative h-full px-5 pt-4 pb-10 flex flex-col gap-2">

@@ -24,13 +24,6 @@ function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }
           : 'bg-card border-border'
         }`}
     >
-      <div
-        className="absolute inset-0 rounded opacity-[0.3] pointer-events-none"
-        style={{
-          backgroundImage: 'radial-gradient(circle, oklch(70% 0.01 75) 1px, transparent 1px)',
-          backgroundSize: '14px 14px',
-        }}
-      />
       <div className="relative h-full px-3 pt-2.5 pb-2 flex flex-col justify-between">
         <div className="flex items-start justify-between gap-1">
           <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
@@ -575,11 +568,11 @@ function CoverageList({
                 <span className={`text-sm truncate ${wins ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
                   {formatCategory(category)}
                 </span>
-                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none flex-shrink-0 ${rateColorClass(best!.rate)}`}>
+                <span className={`text-xs font-semibold px-1.5 py-1 rounded-sm leading-none flex-shrink-0 ${rateColorClass(best!.rate)}`}>
                   {best!.rate}×
                 </span>
               </div>
-              <span className="text-[10px] text-muted-foreground/60 truncate block mt-0.5">
+              <span className="text-[11px] text-muted-foreground/60 truncate block mt-0.5">
                 {best!.card.name}
               </span>
             </div>
@@ -592,11 +585,11 @@ function CoverageList({
             <div key={category} className="px-2 py-1.5 rounded-sm opacity-40">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm text-foreground/80 truncate">{formatCategory(category)}</span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none flex-shrink-0 bg-stone-100 text-stone-400">
+                <span className="text-xs font-semibold px-1.5 py-1 rounded-sm leading-none flex-shrink-0 bg-stone-100 text-stone-400">
                   —
                 </span>
               </div>
-              <span className="text-[10px] text-muted-foreground/60 block mt-0.5">No card</span>
+              <span className="text-[11px] text-muted-foreground/60 block mt-0.5">No card</span>
             </div>
           ))}
         </div>
