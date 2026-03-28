@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { formatIssuer, formatCategory, rateColorClass, getTopRates } from '@/lib/constants'
+import { BizBadge } from '@/components/ui/biz-badge'
 import type { CardGridItem } from '@/types/api'
 
 interface CardTileProps {
@@ -37,9 +38,12 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
       <div className="relative h-full px-5 pt-4 pb-2 flex flex-col gap-2">
         {/* Header row: issuer + fee */}
         <div className="flex items-start justify-between gap-2">
-          <span className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
-            {formatIssuer(card.issuer)}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
+              {formatIssuer(card.issuer)}
+            </span>
+            {card.isBusiness && <BizBadge />}
+          </div>
           <span className={`text-sm tabular-nums flex-shrink-0 ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
             {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}/yr`}
           </span>

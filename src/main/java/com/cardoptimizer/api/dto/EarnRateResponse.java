@@ -8,5 +8,6 @@ public record EarnRateResponse(
     String category,
     double multiplier,
     String caveats,
-    String lastVerified
+    String lastVerified,
+    boolean isRotating
 ) {}

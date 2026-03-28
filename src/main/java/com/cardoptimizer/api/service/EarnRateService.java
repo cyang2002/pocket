@@ -33,7 +33,8 @@ public class EarnRateService {
                 er.category(),
                 er.multiplier(),
                 er.caveats(),
-                er.lastVerified()
+                er.lastVerified(),
+                er.isRotating() != 0
             ))
             .toList();
     }

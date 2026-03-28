@@ -28,6 +28,7 @@ export interface GridFilters {
 }
 
 export interface CardDetailFull extends CardGridItem {
-  offers?: { amount?: { amount: number; currency: string; type?: string; details?: string }[] }[]
+  currency?: string
+  offers?: { amount?: { amount: number; currency?: string; type?: string; details?: string }[]; spend?: number; days?: number }[]
   credits?: { description?: string; value?: number; currency?: string }[]
 }

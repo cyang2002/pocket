@@ -5,6 +5,7 @@ import { StalenessIndicator } from '@/components/grid/StalenessIndicator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SectionHeader } from '@/components/ui/section-header'
 import { CATEGORIES, formatCategory, formatIssuer, isStaleDate, rateTileBg, rateNumColor } from '@/lib/constants'
+import { BizBadge } from '@/components/ui/biz-badge'
 import type { CardDetailFull, EarnRateDetail } from '@/types/api'
 
 function formatNetwork(network: string): string {
@@ -15,10 +16,11 @@ function formatNetwork(network: string): string {
   return map[network] ?? formatIssuer(network)
 }
 
-function formatBonus(offer: { amount: number; currency: string }): string | null {
-  if (!offer.currency || offer.currency === 'null') return null
-  if (offer.currency === 'USD') return `$${offer.amount.toLocaleString()} bonus`
-  return `${offer.amount.toLocaleString()} ${offer.currency} bonus`
+function formatBonus(offer: { amount: number; currency?: string }, cardCurrency?: string): string | null {
+  const currency = offer.currency || cardCurrency
+  if (!currency || currency === 'null') return null
+  if (currency === 'USD') return `$${offer.amount.toLocaleString()} bonus`
+  return `${offer.amount.toLocaleString()} ${currency} bonus`
 }
 
 export function CardDetail() {
@@ -73,7 +75,7 @@ export function CardDetail() {
 
   const isStale = isStaleDate(mostRecentVerified)
   const firstOffer = cardData.offers?.[0]?.amount?.[0]
-  const bonusText = firstOffer ? formatBonus(firstOffer) : null
+  const bonusText = firstOffer ? formatBonus(firstOffer, cardData.currency) : null
 
   const annualFeeLabel = cardData.annualFee === 0 || cardData.isAnnualFeeWaived
     ? 'No annual fee'
@@ -116,12 +118,7 @@ export function CardDetail() {
                   <span>{formatNetwork(cardData.network!)}</span>
                 </>
               )}
-              {cardData.isBusiness && (
-                <>
-                  <span className="text-border select-none">·</span>
-                  <span>Business</span>
-                </>
-              )}
+              {cardData.isBusiness && <BizBadge />}
               {bonusText && (
                 <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-sm bg-amber-50 text-amber-700 ml-1">
                   {bonusText}

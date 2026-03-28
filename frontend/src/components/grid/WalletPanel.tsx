@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCategory, formatIssuer, CATEGORIES, rateColorClass } from '@/lib/constants'
 import { SectionHeader } from '@/components/ui/section-header'
+import { BizBadge } from '@/components/ui/biz-badge'
 import type { CardGridItem } from '@/types/api'
 
 interface WalletPanelProps {
@@ -26,9 +27,12 @@ function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }
     >
       <div className="relative h-full px-3 pt-2.5 pb-2 flex flex-col">
         <div className="flex items-start justify-between gap-1">
-          <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
-            {formatIssuer(card.issuer)}
-          </span>
+          <div className="flex items-center gap-1 min-w-0 flex-1">
+            <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
+              {formatIssuer(card.issuer)}
+            </span>
+            {card.isBusiness && <BizBadge size="sm" />}
+          </div>
           <span className={`text-[10px] tabular-nums flex-shrink-0 ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
             {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
           </span>
@@ -508,9 +512,12 @@ export function WalletPanel({ walletCards, onRemove, onDrop, onClearAll, isCardD
                   className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-border bg-card hover:bg-secondary transition-colors"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none mb-1">
-                      {formatIssuer(card.issuer)}
-                    </p>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none">
+                        {formatIssuer(card.issuer)}
+                      </span>
+                      {card.isBusiness && <BizBadge />}
+                    </div>
                     <p className="text-sm font-medium text-foreground truncate leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
                       {card.name}
                     </p>

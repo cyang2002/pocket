@@ -15,5 +15,6 @@ public record EarnRate(
     @Column("category") String category,
     @Column("multiplier") double multiplier,
     @Column("caveats") String caveats,
-    @Column("last_verified") String lastVerified
+    @Column("last_verified") String lastVerified,
+    @Column("is_rotating") int isRotating
 ) {}
