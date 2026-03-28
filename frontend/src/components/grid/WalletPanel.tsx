@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { formatCategory, formatIssuer, CATEGORIES, rateColorClass } from '@/lib/constants'
+import { Link } from 'react-router-dom'
+import { formatCategory, formatIssuer, CATEGORIES, rateColorClass, getTopRates } from '@/lib/constants'
+import { SectionHeader } from '@/components/ui/section-header'
 import type { CardGridItem } from '@/types/api'
 
 interface WalletPanelProps {
@@ -12,10 +14,7 @@ type ViewMode = 'carousel' | 'list' | 'grid'
 
 
 function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }) {
-  const topRates = (Object.entries(card.earnRates) as [string, number | null][])
-    .filter((e): e is [string, number] => e[1] != null && e[1] > 0)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 2)
+  const topRates = getTopRates(card.earnRates, 1)
 
   return (
     <div
@@ -34,19 +33,19 @@ function MiniCard({ card, isCenter }: { card: CardGridItem; isCenter?: boolean }
       />
       <div className="relative h-full px-3 pt-2.5 pb-2 flex flex-col justify-between">
         <div className="flex items-start justify-between gap-1">
-          <span className="text-[9px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
+          <span className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-tight truncate">
             {formatIssuer(card.issuer)}
           </span>
           <span className={`text-[10px] tabular-nums flex-shrink-0 ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
             {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
           </span>
         </div>
-        <p className="text-[11px] font-medium leading-snug text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
+        <p className="text-xs font-medium leading-snug text-foreground" style={{ fontFamily: 'var(--font-display)' }}>
           {card.name}
         </p>
         <div className="flex flex-wrap gap-1">
           {topRates.map(([cat, val]) => (
-            <span key={cat} className={`text-[8px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
+            <span key={cat} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
               {formatCategory(cat)} {val}×
             </span>
           ))}
@@ -87,16 +86,25 @@ function IconGrid() {
 
 export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [focusedIndex, setFocusedIndex] = useState(0)
-  const [displayPosition, setDisplayPosition] = useState(0)
-  const [viewMode, setViewMode] = useState<ViewMode>('carousel')
+  const [focusedIndex, setFocusedIndex] = useState(() => {
+    try { return Math.max(0, Number(localStorage.getItem('pocket_wallet_focused')) || 0) } catch { return 0 }
+  })
+  const [displayPosition, setDisplayPosition] = useState(() => {
+    try { return Math.max(0, Number(localStorage.getItem('pocket_wallet_focused')) || 0) } catch { return 0 }
+  })
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const v = localStorage.getItem('pocket_wallet_view') as ViewMode
+      return v === 'carousel' || v === 'list' || v === 'grid' ? v : 'carousel'
+    } catch { return 'carousel' }
+  })
   const [containerWidth, setContainerWidth] = useState(256)
 
   const panelRef       = useRef<HTMLDivElement>(null)
-  const positionRef    = useRef(0)
+  const positionRef    = useRef(focusedIndex)
   const cardCountRef   = useRef(walletCards.length)
   const slotXRef       = useRef(180)
-  const lastFocusedRef = useRef(0)
+  const lastFocusedRef = useRef(focusedIndex)
   const isDraggingRef  = useRef(false)
 
   cardCountRef.current = walletCards.length
@@ -113,6 +121,14 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
     ro.observe(panelRef.current)
     return () => ro.disconnect()
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('pocket_wallet_view', viewMode)
+  }, [viewMode])
+
+  useEffect(() => {
+    localStorage.setItem('pocket_wallet_focused', String(focusedIndex))
+  }, [focusedIndex])
 
   function clamp(pos: number) {
     return Math.max(0, Math.min(cardCountRef.current - 1, pos))
@@ -239,45 +255,38 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
   const canGoLeft    = focusedIndex > 0
   const canGoRight   = focusedIndex < walletCards.length - 1
 
+  const viewSwitcher = (
+    <div className="flex items-center gap-0.5">
+      {([
+        { mode: 'carousel', Icon: IconCarousel, label: 'Carousel' },
+        { mode: 'list',     Icon: IconList,     label: 'List'     },
+        { mode: 'grid',     Icon: IconGrid,     label: 'Grid'     },
+      ] as const).map(({ mode, Icon, label }) => (
+        <button
+          key={mode}
+          onClick={() => setViewMode(mode)}
+          aria-label={label}
+          className={`p-1 rounded transition-colors
+            ${viewMode === mode ? 'text-red-500' : 'text-muted-foreground/50 hover:text-muted-foreground'}`}
+        >
+          <Icon />
+        </button>
+      ))}
+    </div>
+  )
+
   return (
     <aside ref={panelRef} className="flex flex-col h-full">
 
       {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
-        <div className="flex items-baseline justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-[3px] h-5 rounded-full bg-primary" />
-            <h2 className="text-base font-semibold">Wallet</h2>
-          </div>
-          <div className="flex items-center gap-1">
-            {walletCards.length > 0 && (
-              <div className="flex items-center gap-0.5 mr-2">
-                {([
-                  { mode: 'carousel', Icon: IconCarousel, label: 'Carousel' },
-                  { mode: 'list',     Icon: IconList,     label: 'List'     },
-                  { mode: 'grid',     Icon: IconGrid,     label: 'Grid'     },
-                ] as const).map(({ mode, Icon, label }) => (
-                  <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    aria-label={label}
-                    className={`p-1 rounded transition-colors
-                      ${viewMode === mode
-                        ? 'text-red-500'
-                        : 'text-muted-foreground/50 hover:text-muted-foreground'
-                      }`}
-                  >
-                    <Icon />
-                  </button>
-                ))}
-              </div>
-            )}
-            {walletCards.length > 0 && (
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {walletCards.length} {walletCards.length === 1 ? 'card' : 'cards'}
-              </span>
-            )}
-          </div>
+        <div className="flex items-center justify-between">
+          <SectionHeader title="Wallet" />
+          {walletCards.length > 0 && (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              {walletCards.length} {walletCards.length === 1 ? 'card' : 'cards'}
+            </span>
+          )}
         </div>
         {walletCards.length > 0 && (
           <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
@@ -374,10 +383,11 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
             )}
           </div>
 
-          {/* Position dots */}
-          {walletCards.length > 1 && (
-            <div className="flex justify-center gap-1 py-2 flex-shrink-0">
-              {walletCards.map((_, i) => (
+          {/* Controls: dots centered, view switcher right */}
+          <div className="grid grid-cols-3 items-center px-3 py-1.5 flex-shrink-0">
+            <div />
+            <div className="flex items-center justify-center gap-1">
+              {walletCards.length > 1 && walletCards.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => snapTo(i)}
@@ -389,18 +399,32 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
                 />
               ))}
             </div>
-          )}
+            <div className="flex justify-end">{viewSwitcher}</div>
+          </div>
 
           {/* Focused card label + remove */}
           {focusedCard && (
             <div className="px-3 py-2 flex items-center justify-between flex-shrink-0 border-t border-border">
-              <span className="text-xs text-muted-foreground truncate mr-2">{focusedCard.name}</span>
-              <button
-                onClick={() => onRemove(focusedCard.cardId)}
-                className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors flex-shrink-0"
+              <Link
+                to={`/cards/${focusedCard.cardId}`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate mr-2"
               >
-                Remove
-              </button>
+                {focusedCard.name}
+              </Link>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to={`/cards/${focusedCard.cardId}`}
+                  className="text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
+                >
+                  Details →
+                </Link>
+                <button
+                  onClick={() => onRemove(focusedCard.cardId)}
+                  className="text-xs text-muted-foreground/60 hover:text-destructive transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           )}
 
@@ -411,84 +435,104 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
       ) : viewMode === 'list' ? (
 
         /* ── List view ── */
-        <div
-          className="flex-1 overflow-y-auto"
-          onDragOver={handleDragOver}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={handleDrop}
-        >
-          <div className="px-3 py-2 space-y-1">
-            {walletCards.map(card => {
-              const topRates = (Object.entries(card.earnRates) as [string, number | null][])
-                .filter((e): e is [string, number] => e[1] != null && e[1] > 0)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 2)
-              return (
-                <div
-                  key={card.cardId}
-                  className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-border bg-card hover:bg-secondary transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none mb-1">
-                      {formatIssuer(card.issuer)}
-                    </p>
-                    <p className="text-sm font-medium text-foreground truncate leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
-                      {card.name}
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {topRates.map(([cat, val]) => (
-                        <span key={cat} className={`text-[8px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
-                          {formatCategory(cat)} {val}×
-                        </span>
-                      ))}
+        <>
+          <div
+            className="overflow-y-auto flex-shrink-0"
+            onDragOver={handleDragOver}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+          >
+            <div className="px-3 py-2 space-y-1">
+              {walletCards.map(card => {
+                const topRates = getTopRates(card.earnRates, 2)
+                return (
+                  <Link
+                    key={card.cardId}
+                    to={`/cards/${card.cardId}`}
+                    className="flex items-center justify-between gap-2 px-2.5 py-2 rounded border border-border bg-card hover:bg-secondary transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground leading-none mb-1">
+                        {formatIssuer(card.issuer)}
+                      </p>
+                      <p className="text-sm font-medium text-foreground truncate leading-snug" style={{ fontFamily: 'var(--font-display)' }}>
+                        {card.name}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {topRates.map(([cat, val]) => (
+                          <span key={cat} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}>
+                            {formatCategory(cat)} {val}×
+                          </span>
+                        ))}
+                      </div>
                     </div>
+                    <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <span className={`text-xs tabular-nums ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
+                        {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
+                      </span>
+                      <button
+                        onClick={e => { e.preventDefault(); onRemove(card.cardId) }}
+                        className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 items-center px-3 py-1.5 flex-shrink-0 border-b border-border/40">
+            <div /><div />
+            <div className="flex justify-end">{viewSwitcher}</div>
+          </div>
+          <CoverageList coverage={coverage} coveredCount={coveredCount} focusedCard={null} />
+        </>
+
+      ) : (
+
+        /* ── Grid view ── */
+        <>
+          <div
+            className="overflow-y-auto flex-shrink-0"
+            onDragOver={handleDragOver}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+          >
+            <div className="px-3 py-2 grid grid-cols-2 gap-2">
+              {walletCards.map(card => (
+                <div key={card.cardId} className="relative group">
+                  <div style={{ aspectRatio: '85.6 / 54' }}>
+                    <MiniCard card={card} />
                   </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className={`text-xs tabular-nums ${card.annualFee === 0 ? 'text-muted-foreground' : 'font-semibold text-foreground'}`}>
-                      {card.annualFee === 0 ? 'No fee' : `$${card.annualFee}`}
-                    </span>
+                  <div className="absolute bottom-0 inset-x-0 rounded-b pt-4 pb-1.5 px-2
+                    bg-gradient-to-t from-card via-card/90 to-transparent
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-150
+                    flex items-end justify-between gap-1"
+                  >
+                    <Link
+                      to={`/cards/${card.cardId}`}
+                      className="text-[10px] font-semibold text-foreground hover:text-primary transition-colors"
+                    >
+                      Details →
+                    </Link>
                     <button
                       onClick={() => onRemove(card.cardId)}
-                      className="text-[10px] text-muted-foreground/50 hover:text-destructive transition-colors"
+                      className="text-[10px] text-muted-foreground/60 hover:text-destructive transition-colors"
                     >
                       Remove
                     </button>
                   </div>
                 </div>
-              )
-            })}
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 items-center px-3 py-1.5 flex-shrink-0 border-b border-border/40">
+            <div /><div />
+            <div className="flex justify-end">{viewSwitcher}</div>
           </div>
           <CoverageList coverage={coverage} coveredCount={coveredCount} focusedCard={null} />
-        </div>
-
-      ) : (
-
-        /* ── Grid view ── */
-        <div
-          className="flex-1 overflow-y-auto"
-          onDragOver={handleDragOver}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={handleDrop}
-        >
-          <div className="px-3 py-2 grid grid-cols-2 gap-2">
-            {walletCards.map(card => (
-              <div key={card.cardId} className="relative group">
-                <div style={{ aspectRatio: '85.6 / 54' }}>
-                  <MiniCard card={card} />
-                </div>
-                <button
-                  onClick={() => onRemove(card.cardId)}
-                  className="absolute top-1 right-1 w-4 h-4 rounded-full bg-background/80 border border-border
-                    flex items-center justify-center text-[9px] text-muted-foreground
-                    opacity-0 group-hover:opacity-100 hover:text-destructive transition-all"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-          <CoverageList coverage={coverage} coveredCount={coveredCount} focusedCard={null} />
-        </div>
+        </>
       )}
     </aside>
   )

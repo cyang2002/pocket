@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { SectionHeader } from '@/components/ui/section-header'
 import type { GridFilters as GridFiltersType } from '@/types/api'
 
 function useWallet() {
@@ -76,12 +77,16 @@ export function EarnRateGrid() {
     return wallet.map(id => data.find(c => c.cardId === id)).filter(Boolean) as NonNullable<typeof data[number]>[]
   }, [data, wallet])
 
-  const isFiltered = filteredData.length !== data?.length
-
-  const [sidebarWidth, setSidebarWidth] = useState(256)
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const v = localStorage.getItem('pocket_sidebar_width')
+      return v ? Math.max(180, Math.min(520, Number(v))) : 256
+    } catch { return 256 }
+  })
   const isDragging = useRef(false)
   const dragStartX = useRef(0)
   const dragStartWidth = useRef(0)
+  const lastWidthRef = useRef(sidebarWidth)
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -94,13 +99,16 @@ export function EarnRateGrid() {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return
       const delta = dragStartX.current - e.clientX
-      setSidebarWidth(Math.max(180, Math.min(520, dragStartWidth.current + delta)))
+      const w = Math.max(180, Math.min(520, dragStartWidth.current + delta))
+      lastWidthRef.current = w
+      setSidebarWidth(w)
     }
 
     const onMouseUp = () => {
       isDragging.current = false
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      localStorage.setItem('pocket_sidebar_width', String(lastWidthRef.current))
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
     }
@@ -116,13 +124,10 @@ export function EarnRateGrid() {
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
           <div className="px-8 sm:px-16 py-4 flex items-center gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-[3px] h-5 rounded-full bg-primary" />
-              <h1 className="text-base font-semibold tracking-tight">Browse</h1>
-            </div>
+            <SectionHeader title="Browse" />
             {!isLoading && !isError && data && (
               <span className="text-sm text-muted-foreground tabular-nums">
-                {isFiltered ? `${filteredData.length} of ${data.length}` : data.length} cards
+                {filteredData.length < data.length ? `${filteredData.length} of ${data.length}` : data.length} cards
                 {sortCol ? ` · ${formatCategory(sortCol)}` : ''}
               </span>
             )}

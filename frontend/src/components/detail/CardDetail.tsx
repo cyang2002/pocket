@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useCardDetail } from '@/hooks/useCardDetail'
 import { StalenessIndicator } from '@/components/grid/StalenessIndicator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { SectionHeader } from '@/components/ui/section-header'
 import { CATEGORIES, formatCategory, formatIssuer, isStaleDate, rateTileBg, rateNumColor } from '@/lib/constants'
 import type { CardDetailFull, EarnRateDetail } from '@/types/api'
 
@@ -48,25 +50,29 @@ export function CardDetail() {
   const cardData = card.data as CardDetailFull | undefined
   if (!cardData) return null
 
-  const ratesByCategory = new Map<string, EarnRateDetail>(
+  const ratesByCategory = useMemo(() => new Map<string, EarnRateDetail>(
     (earnRates.data ?? []).map(r => [r.category, r])
-  )
+  ), [earnRates.data])
 
-  const mostRecentVerified = earnRates.data
+  const mostRecentVerified = useMemo(() => earnRates.data
     ?.map(r => r.lastVerified)
     .filter((d): d is string => !!d)
     .sort()
     .at(-1)
+  , [earnRates.data])
   const isStale = isStaleDate(mostRecentVerified)
 
   const firstOffer = cardData.offers?.[0]?.amount?.[0]
   const bonusText = firstOffer ? formatBonus(firstOffer) : null
 
-  const coveredCategories = [...CATEGORIES]
+  const coveredCategories = useMemo(() => [...CATEGORIES]
     .filter(cat => ratesByCategory.has(cat) && (ratesByCategory.get(cat)?.multiplier ?? 0) > 0)
     .sort((a, b) => (ratesByCategory.get(b)?.multiplier ?? 0) - (ratesByCategory.get(a)?.multiplier ?? 0))
+  , [ratesByCategory])
 
-  const uncoveredCategories = CATEGORIES.filter(cat => !coveredCategories.includes(cat))
+  const uncoveredCategories = useMemo(() =>
+    CATEGORIES.filter(cat => !coveredCategories.includes(cat))
+  , [coveredCategories])
 
   const annualFeeLabel = cardData.annualFee === 0 || cardData.isAnnualFeeWaived
     ? 'No annual fee'
@@ -135,12 +141,12 @@ export function CardDetail() {
 
       {/* ── Earn Rates ── */}
       <div className="px-8 sm:px-16 py-10">
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-[3px] h-5 rounded-full bg-primary" />
-          <h2 className="text-base font-semibold">Earn Rates</h2>
-          {isStale && earnRates.data && earnRates.data.length > 0 && (
-            <StalenessIndicator abbreviated />
-          )}
+        <div className="mb-6">
+          <SectionHeader title="Earn Rates">
+            {isStale && earnRates.data && earnRates.data.length > 0 && (
+              <StalenessIndicator abbreviated />
+            )}
+          </SectionHeader>
         </div>
 
         {coveredCategories.length > 0 ? (
@@ -183,9 +189,8 @@ export function CardDetail() {
       {/* ── Credits & Benefits ── */}
       {cardData.credits && cardData.credits.length > 0 && (
         <div className="px-8 sm:px-16 pb-12">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-[3px] h-5 rounded-full bg-primary" />
-            <h2 className="text-base font-semibold">Credits & Benefits</h2>
+          <div className="mb-5">
+            <SectionHeader title="Credits & Benefits" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {cardData.credits.map((credit, i) => (

@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useCompare } from '@/hooks/useCompare'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { SectionHeader } from '@/components/ui/section-header'
 import { CATEGORIES, formatCategory, rateColorClass } from '@/lib/constants'
 import type { CardGridItem } from '@/types/api'
 
@@ -38,19 +40,21 @@ export function CompareView() {
 
   const cards: CardGridItem[] = data
 
-  const maxByCategory = new Map<string, number>()
-  CATEGORIES.forEach(cat => {
-    const values = cards.map(c => c.earnRates[cat]).filter((v): v is number => v != null)
-    if (values.length > 0) maxByCategory.set(cat, Math.max(...values))
-  })
+  const maxByCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    CATEGORIES.forEach(cat => {
+      const values = cards.map(c => c.earnRates[cat]).filter((v): v is number => v != null)
+      if (values.length > 0) map.set(cat, Math.max(...values))
+    })
+    return map
+  }, [cards])
 
   return (
     <div className="min-h-screen bg-background">
       <div className="px-8 sm:px-16 pt-7 pb-4">
         <Link to="/browse" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">← Browse</Link>
-        <div className="flex items-center gap-2.5 mt-6">
-          <div className="w-[3px] h-5 rounded-full bg-primary" />
-          <h1 className="text-base font-semibold">Comparing {cards.length} Card{cards.length !== 1 ? 's' : ''}</h1>
+        <div className="mt-6">
+          <SectionHeader title={`Comparing ${cards.length} Card${cards.length !== 1 ? 's' : ''}`} />
         </div>
       </div>
 

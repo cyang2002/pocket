@@ -1,5 +1,6 @@
+import { memo } from 'react'
 import { Link } from 'react-router-dom'
-import { formatIssuer, formatCategory, rateColorClass } from '@/lib/constants'
+import { formatIssuer, formatCategory, rateColorClass, getTopRates } from '@/lib/constants'
 import type { CardGridItem } from '@/types/api'
 
 interface CardTileProps {
@@ -9,11 +10,8 @@ interface CardTileProps {
   onRemove: () => void
 }
 
-export function CardTile({ card, inWallet, onAdd, onRemove }: CardTileProps) {
-  const topRates = (Object.entries(card.earnRates) as [string, number | null][])
-    .filter((entry): entry is [string, number] => entry[1] != null && entry[1] > 0)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
+export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove }: CardTileProps) {
+  const topRates = getTopRates(card.earnRates, 3)
 
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.setData('text/plain', card.cardId)
@@ -105,4 +103,4 @@ export function CardTile({ card, inWallet, onAdd, onRemove }: CardTileProps) {
       {/* In-wallet ring is the indicator — no extra dot needed */}
     </div>
   )
-}
+})
