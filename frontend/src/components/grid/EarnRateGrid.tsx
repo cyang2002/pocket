@@ -5,8 +5,7 @@ import { CardTile } from './CardTile'
 import { WalletPanel } from './WalletPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { formatCategory } from '@/lib/constants'
 import { SectionHeader } from '@/components/ui/section-header'
 import type { GridFilters as GridFiltersType } from '@/types/api'
 
@@ -43,6 +42,7 @@ function useWallet() {
 export function EarnRateGrid() {
   const [filters, setFilters] = useState<GridFiltersType>({})
   const [sortCol, setSortCol] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(true)
   const { wallet, add: addToWallet, remove: removeFromWallet } = useWallet()
 
   const { data, isLoading, isError } = useCardGrid({})
@@ -71,6 +71,8 @@ export function EarnRateGrid() {
       return bv - av
     })
   }, [filteredData, sortCol])
+
+  const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined || sortCol)
 
   const walletCards = useMemo(() => {
     if (!data) return []
@@ -123,34 +125,53 @@ export function EarnRateGrid() {
       <div className="flex-1 min-w-0 overflow-y-auto">
         {/* Sticky header */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="px-8 sm:px-16 py-4 flex items-center gap-3">
+          <div className="px-8 sm:px-16 py-4 flex items-center gap-3 flex-wrap">
             <SectionHeader title="Browse" />
             {!isLoading && !isError && data && (
               <span className="text-sm text-muted-foreground tabular-nums">
                 {filteredData.length < data.length ? `${filteredData.length} of ${data.length}` : data.length} cards
-                {sortCol ? ` · ${formatCategory(sortCol)}` : ''}
+              </span>
+            )}
+            {sortCol && !isLoading && !isError && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-sm bg-primary/10 text-primary">
+                Sorted by {formatCategory(sortCol)}
+                <button onClick={() => setSortCol(null)} className="ml-0.5 hover:opacity-60 transition-opacity" aria-label="Clear sort">×</button>
               </span>
             )}
             {!isLoading && !isError && (
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Sort</span>
-                <Select value={sortCol ?? ''} onValueChange={v => setSortCol(v || null)}>
-                  <SelectTrigger className="w-36 h-8 text-xs">
-                    <SelectValue placeholder="Default" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Default</SelectItem>
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat}>{formatCategory(cat)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <button
+                onClick={() => setShowFilters(v => !v)}
+                className={`ml-auto flex items-center gap-2 h-8 px-3 rounded border text-xs font-semibold transition-colors
+                  ${showFilters
+                    ? 'bg-secondary border-border text-foreground'
+                    : hasActiveFilters
+                      ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/15'
+                      : 'bg-background border-border text-foreground hover:bg-secondary'
+                  }`}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M1 2.5h10M3 6h6M5 9.5h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Filters
+                {hasActiveFilters && (
+                  <span className={`text-[10px] font-bold tabular-nums px-1 py-0.5 rounded-sm leading-none
+                    ${showFilters ? 'bg-primary/15 text-primary' : 'bg-primary text-primary-foreground'}`}>
+                    {[filters.issuer, filters.isBusiness !== undefined, filters.network, filters.maxFee !== undefined, sortCol].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
             )}
           </div>
         </div>
 
-        <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} />
+        <div
+          className="grid transition-[grid-template-rows] duration-200 ease-out"
+          style={{ gridTemplateRows: showFilters ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden">
+            <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} sortCol={sortCol} onSortChange={setSortCol} />
+          </div>
+        </div>
 
         {isLoading && (
           <div className="px-8 sm:px-16 py-6 grid grid-cols-2 lg:grid-cols-3 gap-3">

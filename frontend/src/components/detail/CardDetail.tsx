@@ -25,28 +25,6 @@ export function CardDetail() {
   const { id } = useParams<{ id: string }>()
   const { card, earnRates } = useCardDetail(id ?? '')
 
-  if (card.isLoading || earnRates.isLoading) {
-    return (
-      <div className="px-8 sm:px-16 pt-8 pb-16 min-h-[260px] flex flex-col gap-4 border-b border-border">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-10 w-80 mt-4" />
-        <div className="flex gap-2 mt-2">
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-5 w-20" />
-        </div>
-      </div>
-    )
-  }
-
-  if (card.isError) {
-    return (
-      <div className="px-8 sm:px-16 py-16 text-center">
-        <p className="text-sm text-muted-foreground">Unable to load card. Check your connection.</p>
-        <Link to="/browse" className="text-sm text-primary hover:underline mt-2 inline-block">← Back to Browse</Link>
-      </div>
-    )
-  }
-
   const cardData = card.data as CardDetailFull | undefined
 
   const ratesByCategory = useMemo(() => new Map<string, EarnRateDetail>(
@@ -68,6 +46,28 @@ export function CardDetail() {
   const uncoveredCategories = useMemo(() =>
     CATEGORIES.filter(cat => !coveredCategories.includes(cat))
   , [coveredCategories])
+
+  if (card.isLoading || earnRates.isLoading) {
+    return (
+      <div className="px-8 sm:px-16 pt-8 pb-16 min-h-[260px] flex flex-col gap-4 border-b border-border">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-10 w-80 mt-4" />
+        <div className="flex gap-2 mt-2">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-20" />
+        </div>
+      </div>
+    )
+  }
+
+  if (card.isError) {
+    return (
+      <div className="px-8 sm:px-16 py-16 text-center">
+        <p className="text-sm text-muted-foreground">Unable to load card. Check your connection.</p>
+        <Link to="/browse" className="text-sm text-primary hover:underline mt-2 inline-block">← Back to Browse</Link>
+      </div>
+    )
+  }
 
   if (!cardData) return null
 

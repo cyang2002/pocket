@@ -12,6 +12,8 @@ interface CardTileProps {
 
 export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove }: CardTileProps) {
   const topRates = getTopRates(card.earnRates, 3)
+  const totalRates = Object.values(card.earnRates).filter(v => v != null && v > 0).length
+  const remaining = totalRates - topRates.length
 
   function handleDragStart(e: React.DragEvent) {
     e.dataTransfer.setData('text/plain', card.cardId)
@@ -22,7 +24,7 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
     <div
       draggable
       onDragStart={handleDragStart}
-      className={`group relative rounded select-none cursor-grab active:cursor-grabbing
+      className={`group relative rounded overflow-hidden select-none cursor-grab active:cursor-grabbing
         transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_4px_24px_oklch(0%_0_0/0.1)]
         ${inWallet
           ? 'bg-[oklch(98%_0.012_152)] border border-primary/40 ring-1 ring-primary/15'
@@ -53,7 +55,7 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
 
         {/* Card name */}
         <p
-          className="flex-1 text-[17px] font-medium leading-snug text-foreground flex items-center"
+          className="flex-1 text-[15px] font-medium leading-snug text-foreground flex items-center"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           {card.name}
@@ -64,11 +66,16 @@ export const CardTile = memo(function CardTile({ card, inWallet, onAdd, onRemove
           {topRates.map(([cat, val]) => (
             <span
               key={cat}
-              className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-sm leading-none ${rateColorClass(val)}`}
+              className={`inline-flex items-center text-xs font-semibold px-2 py-1 rounded-sm leading-none ${rateColorClass(val)}`}
             >
               {formatCategory(cat)}&nbsp;{val}×
             </span>
           ))}
+          {remaining > 0 && (
+            <span className="inline-flex items-center text-xs font-semibold px-2 py-1 rounded-sm leading-none bg-stone-100 text-stone-400">
+              +{remaining} more
+            </span>
+          )}
         </div>
       </div>
 

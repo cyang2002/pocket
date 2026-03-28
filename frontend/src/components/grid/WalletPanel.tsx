@@ -267,7 +267,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
           onClick={() => setViewMode(mode)}
           aria-label={label}
           className={`p-1 rounded transition-colors
-            ${viewMode === mode ? 'text-red-500' : 'text-muted-foreground/50 hover:text-muted-foreground'}`}
+            ${viewMode === mode ? 'text-primary' : 'text-muted-foreground/50 hover:text-muted-foreground'}`}
         >
           <Icon />
         </button>
@@ -280,21 +280,31 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
 
       {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <SectionHeader title="Wallet" />
+        <div className="flex items-start justify-between">
+          <div>
+            <SectionHeader title="Wallet" />
+            {walletCards.length > 0 && (
+              <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                <span className="tabular-nums">${totalFee}/yr</span>
+                <span className="text-border">·</span>
+                <span>{coveredCount}/12 categories</span>
+              </div>
+            )}
+          </div>
           {walletCards.length > 0 && (
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {walletCards.length} {walletCards.length === 1 ? 'card' : 'cards'}
-            </span>
+            <div className="text-center leading-none">
+              <span
+                className="block tabular-nums font-bold text-foreground"
+                style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3vw, 2rem)' }}
+              >
+                {walletCards.length}
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground font-medium">
+                {walletCards.length === 1 ? 'card' : 'cards'}
+              </span>
+            </div>
           )}
         </div>
-        {walletCards.length > 0 && (
-          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-            <span className="tabular-nums">${totalFee}/yr</span>
-            <span className="text-border">·</span>
-            <span>{coveredCount}/12 categories</span>
-          </div>
-        )}
       </div>
 
       {walletCards.length === 0 ? (
