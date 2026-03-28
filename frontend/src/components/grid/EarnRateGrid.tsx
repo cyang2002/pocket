@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useCardGrid } from '@/hooks/useCardGrid'
 import { GridFilters } from './GridFilters'
 import { StalenessIndicator } from './StalenessIndicator'
@@ -108,7 +108,7 @@ export function EarnRateGrid() {
                   </TableCell>
                   <TableCell className="sticky left-11 bg-background z-10 min-w-[180px] py-3 px-4">
                     <div className="flex flex-col gap-1">
-                      <span className="font-medium">{card.name}</span>
+                      <Link to={"/cards/" + card.cardId} className="font-medium hover:underline">{card.name}</Link>
                       <span className="text-xs text-muted-foreground">{card.issuer}</span>
                       {card.isStale && <StalenessIndicator abbreviated />}
                     </div>
