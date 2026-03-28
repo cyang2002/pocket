@@ -54,9 +54,14 @@ export function LandingPage() {
             0%, 100% { opacity: 0.92; }
             50%       { opacity: 0.3; }
           }
+          @keyframes reader-led {
+            0%, 100% { opacity: 0.45; }
+            50%      { opacity: 1; }
+          }
           @media (prefers-reduced-motion: reduce) {
             .swipe-arrow-line { animation: none !important; }
             .swipe-arrow-svg  { animation: none !important; opacity: 0.85 !important; }
+            .reader-led       { animation: none !important; opacity: 0.8 !important; }
           }
         `}</style>
 
@@ -103,34 +108,69 @@ export function LandingPage() {
           </svg>
         </div>
 
-        {/* Slot-entry shadow — depth where card enters the terminal */}
+        {/* Slot-entry shadow — soft darkening as card approaches groove */}
         <div
           className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{
-            height: 28,
+            height: 32,
             zIndex: 10,
-            background: 'linear-gradient(to bottom, transparent, oklch(0% 0 0 / 0.06))',
+            background: 'linear-gradient(to bottom, transparent, oklch(0% 0 0 / 0.07))',
           }}
         />
       </div>
 
-      {/* Terminal face — where the card enters */}
-      <div
-        className="px-8 sm:px-16 pt-4 pb-10 flex items-center gap-3"
-        style={{
-          borderTop: '1.5px solid oklch(84% 0.012 75)',
-          background: 'oklch(96.5% 0.007 75)',
-          boxShadow: 'inset 0 6px 20px oklch(0% 0 0 / 0.035)',
-        }}
-      >
-        <span className="text-xs text-muted-foreground/70">drag right to browse →</span>
-        <span className="text-border select-none">·</span>
-        <Link
-          to="/browse"
-          className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2"
-        >
-          or browse directly
-        </Link>
+      {/* Card reader housing */}
+      <div style={{
+        background: 'oklch(95% 0.007 75)',
+        boxShadow: 'inset 0 1px 0 oklch(100% 0 0 / 0.5)',
+      }}>
+
+        {/* Card slot groove — thin recessed line with shadow depth */}
+        <div style={{
+          height: 4,
+          background: 'oklch(52% 0.015 240 / 0.45)',
+          boxShadow: [
+            'inset 0 2px 4px oklch(0% 0 0 / 0.25)',
+            '0 1px 0 oklch(100% 0 0 / 0.55)',
+          ].join(', '),
+        }} />
+
+        {/* Housing body */}
+        <div className="px-8 sm:px-16 pt-4 pb-10 flex items-center gap-3">
+          {/* Ready LED */}
+          <div
+            className="reader-led"
+            style={{
+              width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+              background: 'oklch(68% 0.15 148)',
+              boxShadow: '0 0 6px oklch(68% 0.15 148 / 0.45)',
+              animation: 'reader-led 3s ease-in-out infinite',
+            }}
+          />
+          <span className="text-xs text-muted-foreground/70">drag right to browse →</span>
+          <span className="text-border select-none">·</span>
+          <Link
+            to="/browse"
+            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2"
+          >
+            or browse directly
+          </Link>
+
+          {/* Embossed card-swipe icon — molded into the housing */}
+          <svg
+            className="ml-auto flex-shrink-0"
+            width="32" height="22" viewBox="0 0 32 22" fill="none"
+            style={{ opacity: 0.18 }}
+          >
+            <rect x="1" y="4" width="18" height="13" rx="1.5"
+              stroke="currentColor" strokeWidth="1.2" />
+            <rect x="3.5" y="7.5" width="5" height="3.5" rx="0.5"
+              stroke="currentColor" strokeWidth="0.8" />
+            <polyline points="24,7 28,11 24,15"
+              stroke="currentColor" strokeWidth="1.3"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
       </div>
 
     </div>

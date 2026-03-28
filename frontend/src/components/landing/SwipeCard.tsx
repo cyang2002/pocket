@@ -142,6 +142,10 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
     }
   }
 
+  function onPointerCancel() {
+    if (phase === 'dragging') snapBack(x)
+  }
+
   useEffect(() => () => stop(), [])
 
   // Nudge right on first card load to signal draggability
@@ -187,6 +191,8 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onLostPointerCapture={onPointerCancel}
         style={{
           position:      'relative',
           width:         CARD_W,
