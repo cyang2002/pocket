@@ -7,13 +7,17 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { CATEGORIES, formatCategory, formatIssuer } from '@/lib/constants'
 import type { GridFilters as GridFiltersType } from '@/types/api'
+
+type SortDir = 'desc' | 'asc'
 
 export function EarnRateGrid() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState<GridFiltersType>({})
   const [staged, setStaged] = useState<string[]>([])
+  const [sortCol, setSortCol] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const { data, isLoading, isError } = useCardGrid({})
 
@@ -32,6 +36,35 @@ export function EarnRateGrid() {
       return true
     })
   }, [data, filters])
+
+  const sortedData = useMemo(() => {
+    if (!sortCol) return filteredData
+    return [...filteredData].sort((a, b) => {
+      const av = a.earnRates[sortCol] ?? -1
+      const bv = b.earnRates[sortCol] ?? -1
+      return sortDir === 'desc' ? bv - av : av - bv
+    })
+  }, [filteredData, sortCol, sortDir])
+
+  const maxByCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    CATEGORIES.forEach(cat => {
+      const values = filteredData.map(c => c.earnRates[cat]).filter((v): v is number => v != null)
+      if (values.length > 0) map.set(cat, Math.max(...values))
+    })
+    return map
+  }, [filteredData])
+
+  function handleSortClick(cat: string) {
+    if (sortCol !== cat) {
+      setSortCol(cat)
+      setSortDir('desc')
+    } else if (sortDir === 'desc') {
+      setSortDir('asc')
+    } else {
+      setSortCol(null)
+    }
+  }
 
   function handleStageToggle(cardId: string, checked: boolean) {
     if (checked) {
@@ -73,62 +106,95 @@ export function EarnRateGrid() {
         </div>
       )}
 
-      {!isLoading && !isError && filteredData.length > 0 && (
+      {!isLoading && !isError && sortedData.length > 0 && (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-11 sticky left-0 bg-background z-10"></TableHead>
                 <TableHead className="sticky left-11 bg-background z-10 min-w-[180px]">Card</TableHead>
-                {CATEGORIES.map(cat => (
-                  <TableHead key={cat} className="text-xs font-semibold py-3 px-4 min-w-[80px]">
-                    {formatCategory(cat)}
-                  </TableHead>
-                ))}
+                {CATEGORIES.map(cat => {
+                  const isActive = sortCol === cat
+                  return (
+                    <TableHead
+                      key={cat}
+                      className="text-xs font-semibold py-3 px-4 min-w-[80px] cursor-pointer select-none hover:text-foreground transition-colors"
+                      onClick={() => handleSortClick(cat)}
+                    >
+                      <span className="flex items-center gap-1">
+                        {formatCategory(cat)}
+                        <span className={`text-[10px] ${isActive ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                          {isActive ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
+                        </span>
+                      </span>
+                    </TableHead>
+                  )
+                })}
                 <TableHead className="text-xs font-semibold py-3 px-4">Annual Fee</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map(card => (
-                <TableRow key={card.cardId}>
-                  <TableCell className="w-11 sticky left-0 bg-background z-10">
-                    <Checkbox
-                      checked={staged.includes(card.cardId)}
-                      onCheckedChange={(checked) => handleStageToggle(card.cardId, !!checked)}
-                      disabled={!staged.includes(card.cardId) && staged.length >= 3}
-                    />
-                  </TableCell>
-                  <TableCell className="sticky left-11 bg-background z-10 min-w-[180px] py-3 px-4">
-                    <div className="flex flex-col gap-1">
-                      <Link to={"/cards/" + card.cardId} className="font-medium hover:underline">{card.name}</Link>
-                      <span className="text-xs text-muted-foreground">{card.issuer}</span>
-                      {card.isStale && <StalenessIndicator abbreviated />}
-                    </div>
-                  </TableCell>
-                  {CATEGORIES.map(cat => (
-                    <TableCell key={cat} className="py-3 px-4">
-                      {card.earnRates[cat] != null
-                        ? `${card.earnRates[cat]}x`
-                        : <span className="text-muted-foreground">&#x2014;</span>
-                      }
+              {sortedData.map(card => {
+                const hasRates = Object.values(card.earnRates).some(v => v != null)
+                return (
+                  <TableRow key={card.cardId}>
+                    <TableCell className="w-11 sticky left-0 bg-background z-10">
+                      <Checkbox
+                        checked={staged.includes(card.cardId)}
+                        onCheckedChange={(checked) => handleStageToggle(card.cardId, !!checked)}
+                        disabled={!staged.includes(card.cardId) && staged.length >= 3}
+                      />
                     </TableCell>
-                  ))}
-                  <TableCell className="py-3 px-4">
-                    ${card.annualFee}
-                  </TableCell>
-                </TableRow>
-              ))}
+                    <TableCell className="sticky left-11 bg-background z-10 min-w-[180px] py-3 px-4">
+                      <div className="flex flex-col gap-1">
+                        <Link to={"/cards/" + card.cardId} className="font-medium hover:underline">{card.name}</Link>
+                        <span className="text-xs text-muted-foreground">{formatIssuer(card.issuer)}</span>
+                        {card.isStale && hasRates && <StalenessIndicator abbreviated />}
+                      </div>
+                    </TableCell>
+                    {CATEGORIES.map(cat => {
+                      const val = card.earnRates[cat]
+                      const max = maxByCategory.get(cat)
+                      const isBest = val != null && max != null && val === max && max > 0
+                      return (
+                        <TableCell
+                          key={cat}
+                          className={`py-3 px-4 ${isBest ? 'bg-amber-50 text-amber-900 font-semibold' : ''}`}
+                        >
+                          {val != null
+                            ? `${val}x`
+                            : <span className="text-muted-foreground">&#x2014;</span>
+                          }
+                        </TableCell>
+                      )
+                    })}
+                    <TableCell className="py-3 px-4">
+                      ${card.annualFee}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>
       )}
 
       {staged.length >= 2 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4 flex items-center justify-between">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg p-4 flex items-center justify-between">
           <div className="flex gap-3">
             {staged.map(id => {
               const card = data?.find(c => c.cardId === id)
-              return card ? <span key={id} className="text-sm font-semibold">{card.name}</span> : null
+              return card ? (
+                <span key={id} className="text-sm font-semibold flex items-center gap-1.5">
+                  {card.name}
+                  <button
+                    onClick={() => handleStageToggle(id, false)}
+                    className="text-muted-foreground hover:text-foreground text-xs leading-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              ) : null
             })}
           </div>
           <button

@@ -9,6 +9,10 @@ export function formatCategory(cat: string): string {
   return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
+export function formatIssuer(issuer: string): string {
+  return issuer.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+}
+
 export function isStaleDate(dateStr: string | null | undefined, thresholdDays = 30): boolean {
   if (!dateStr) return true
   const cutoff = new Date()

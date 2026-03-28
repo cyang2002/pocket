@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
 import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { useCardGrid } from '@/hooks/useCardGrid'
 
 export function LandingPage() {
+  const { data } = useCardGrid({})
+  const cardCount = data?.length
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] flex flex-col">
       {/* Hero */}
@@ -10,10 +14,12 @@ export function LandingPage() {
           Credit Card Earn Rates
         </p>
         <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight leading-tight max-w-2xl">
-          <span className="text-indigo-600">CREDIT CARDS</span>
+          Know which card to reach for.
         </h1>
         <p className="mt-6 text-base text-muted-foreground max-w-md">
-          Currently supports {CATEGORIES.length} distinct cards.
+          {cardCount != null
+            ? `Tracking earn rates across ${cardCount} cards in ${CATEGORIES.length} spend categories.`
+            : `Tracking earn rates across ${CATEGORIES.length} spend categories.`}
         </p>
         <div className="mt-10 flex items-center gap-4">
           <Link
