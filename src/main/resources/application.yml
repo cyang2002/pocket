@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: card-api
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+    serialization:
+      write-enums-using-to-string: false
+
+cardapi:
+  github:
+    base-url: https://raw.githubusercontent.com
+  cache:
+    refresh-ms: 3600000        # proactive eviction every 60 minutes
+    initial-delay-ms: 3600000  # first scheduled eviction after 60 min (not at startup)
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.cardoptimizer.api: DEBUG
