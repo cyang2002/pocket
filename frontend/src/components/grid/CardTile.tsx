@@ -4,7 +4,7 @@ import { formatIssuer, formatCategory, rateColorClass, getTopRates } from '@/lib
 import { BizBadge } from '@/components/ui/biz-badge'
 import type { CardGridItem } from '@/types/api'
 
-interface CardTileProps { //tile
+interface CardTileProps { 
   card: CardGridItem
   inWallet: boolean
   onAdd: () => void
