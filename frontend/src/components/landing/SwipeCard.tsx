@@ -156,12 +156,13 @@ export function SwipeCard({ card, showHint = true }: SwipeCardProps) {
           height: CARD_H,
           transform,
           transition: isDrag || phase === 'snapping' || isFlying
-            ? 'none'
-            : 'transform 200ms ease-out',
+            ? 'opacity 300ms ease-out'
+            : 'transform 200ms ease-out, opacity 300ms ease-out',
           cursor:        isFlying ? 'default' : isDrag ? 'grabbing' : 'grab',
           pointerEvents: isFlying ? 'none' : undefined,
           willChange:    'transform',
           boxShadow:     '0 2px 16px oklch(0% 0 0 / 0.08), 0 1px 4px oklch(0% 0 0 / 0.05)',
+          opacity:       card ? 1 : 0,
         }}
         className="rounded-xl border border-border bg-card overflow-hidden"
       >
@@ -169,10 +170,10 @@ export function SwipeCard({ card, showHint = true }: SwipeCardProps) {
           {/* Issuer + fee */}
           <div className="flex items-start justify-between">
             <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-muted-foreground/70">
-              {card ? formatIssuer(card.issuer) : 'Chase'}
+              {formatIssuer(card?.issuer ?? '')}
             </span>
             <span className="text-[8px] font-medium tabular-nums text-muted-foreground/50">
-              {card ? (card.annualFee === 0 ? 'No fee' : `$${card.annualFee}/yr`) : 'No fee'}
+              {card && (card.annualFee === 0 ? 'No fee' : `$${card.annualFee}/yr`)}
             </span>
           </div>
 
@@ -211,7 +212,7 @@ export function SwipeCard({ card, showHint = true }: SwipeCardProps) {
             className="mt-3 text-[0.88rem] font-semibold text-foreground leading-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
-            {card?.name ?? 'Freedom Flex'}
+            {card?.name}
           </p>
 
           {/* Earn rates — in bottom zone, visible on full card but behind reader on landing */}

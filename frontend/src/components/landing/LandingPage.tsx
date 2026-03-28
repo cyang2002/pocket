@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { CATEGORIES } from '@/lib/constants'
 import { useCardGrid } from '@/hooks/useCardGrid'
 import { SwipeCard, CARD_H } from './SwipeCard'
 
@@ -15,12 +15,9 @@ export function LandingPage() {
   ) ?? data?.[0] ?? null
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col overflow-x-hidden">
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col justify-center overflow-x-hidden">
 
-      <section className="px-8 sm:px-16 pt-16 pb-12">
-        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-6">
-          Credit Card Earn Rates
-        </p>
+      <section className="px-8 sm:px-16 pb-12">
         <h1
           className="text-[clamp(2.8rem,6vw,4.8rem)] font-normal leading-[1.08] tracking-tight text-foreground"
           style={{ fontFamily: 'var(--font-display)' }}
@@ -56,9 +53,9 @@ export function LandingPage() {
         <div
           className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{
-            height: 64,
+            height: 80,
             zIndex: 10,
-            background: 'linear-gradient(to bottom, transparent, oklch(98.5% 0.006 75))',
+            background: 'linear-gradient(to bottom, transparent 0%, oklch(98.5% 0.006 75) 85%)',
           }}
         />
 
@@ -74,23 +71,6 @@ export function LandingPage() {
           or browse directly
         </Link>
       </div>
-
-      {/* Category chips */}
-      <section className="border-t border-border px-8 sm:px-16 py-12 mt-auto">
-        <p className="text-xs font-semibold tracking-[0.15em] uppercase text-muted-foreground mb-5">
-          Tracked categories
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(cat => (
-            <span
-              key={cat}
-              className="text-xs font-medium px-3 py-1.5 rounded border border-border text-muted-foreground"
-            >
-              {formatCategory(cat)}
-            </span>
-          ))}
-        </div>
-      </section>
 
     </div>
   )
