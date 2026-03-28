@@ -26,3 +26,8 @@ export interface GridFilters {
   maxFee?: number
   hasEarnRates?: boolean
 }
+
+export interface CardDetailFull extends CardGridItem {
+  offers?: { amount?: { amount: number; currency: string; type?: string; details?: string }[] }[]
+  credits?: { description?: string; value?: number; currency?: string }[]
+}
