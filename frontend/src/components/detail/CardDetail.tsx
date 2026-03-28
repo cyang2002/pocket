@@ -48,7 +48,6 @@ export function CardDetail() {
   }
 
   const cardData = card.data as CardDetailFull | undefined
-  if (!cardData) return null
 
   const ratesByCategory = useMemo(() => new Map<string, EarnRateDetail>(
     (earnRates.data ?? []).map(r => [r.category, r])
@@ -60,10 +59,6 @@ export function CardDetail() {
     .sort()
     .at(-1)
   , [earnRates.data])
-  const isStale = isStaleDate(mostRecentVerified)
-
-  const firstOffer = cardData.offers?.[0]?.amount?.[0]
-  const bonusText = firstOffer ? formatBonus(firstOffer) : null
 
   const coveredCategories = useMemo(() => [...CATEGORIES]
     .filter(cat => ratesByCategory.has(cat) && (ratesByCategory.get(cat)?.multiplier ?? 0) > 0)
@@ -73,6 +68,12 @@ export function CardDetail() {
   const uncoveredCategories = useMemo(() =>
     CATEGORIES.filter(cat => !coveredCategories.includes(cat))
   , [coveredCategories])
+
+  if (!cardData) return null
+
+  const isStale = isStaleDate(mostRecentVerified)
+  const firstOffer = cardData.offers?.[0]?.amount?.[0]
+  const bonusText = firstOffer ? formatBonus(firstOffer) : null
 
   const annualFeeLabel = cardData.annualFee === 0 || cardData.isAnnualFeeWaived
     ? 'No annual fee'
