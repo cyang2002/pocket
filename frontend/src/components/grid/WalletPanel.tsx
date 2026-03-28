@@ -101,11 +101,10 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
 
   cardCountRef.current = walletCards.length
 
-  const PADDING_X      = 20
-  const cardWidth      = Math.max(80, containerWidth - PADDING_X * 2)
+  const cardWidth      = Math.max(72, Math.round(containerWidth * 0.68))
   const cardHeight     = cardWidth * (54 / 85.6)
-  const carouselHeight = cardHeight + 24
-  const SLOT_X         = containerWidth * 0.80
+  const carouselHeight = cardHeight + 20
+  const SLOT_X         = containerWidth * 0.30
   slotXRef.current     = SLOT_X
 
   useEffect(() => {
@@ -150,18 +149,29 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
 
   function onCarouselMouseDown(e: React.MouseEvent) {
     e.preventDefault()
-    isDraggingRef.current = true
 
     const startX   = e.clientX
     const startPos = positionRef.current
-    let   velPx    = 0
+    let   velPxPerFrame = 0
     let   lastX    = startX
+    let   lastT    = performance.now()
+    let   hasDragged = false
 
     document.body.style.cursor = 'grabbing'
 
     function onMove(ev: MouseEvent) {
-      velPx = ev.clientX - lastX
+      const now = performance.now()
+      const dt  = now - lastT
+      if (dt > 0) velPxPerFrame = (ev.clientX - lastX) / dt * 16.67
       lastX = ev.clientX
+      lastT = now
+
+      if (!hasDragged) {
+        if (Math.abs(ev.clientX - startX) < 6) return
+        hasDragged = true
+        isDraggingRef.current = true
+      }
+
       const newPos = clamp(startPos - (ev.clientX - startX) / slotXRef.current)
       positionRef.current = newPos
       syncFocused(newPos)
@@ -173,9 +183,8 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
       document.body.style.cursor = ''
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)
-      // velPx is pixels moved in the last frame; convert to positions and project
-      const velPos = -velPx / slotXRef.current
-      snapTo(positionRef.current + velPos * 3)
+      const velPos = -velPxPerFrame / slotXRef.current
+      snapTo(positionRef.current + velPos * 4)
     }
 
     document.addEventListener('mousemove', onMove)
@@ -254,7 +263,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
                     aria-label={label}
                     className={`p-1 rounded transition-colors
                       ${viewMode === mode
-                        ? 'text-primary bg-primary/10'
+                        ? 'text-red-500'
                         : 'text-muted-foreground/50 hover:text-muted-foreground'
                       }`}
                   >
@@ -320,7 +329,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
                   style={getCardStyle(i)}
                   onClick={() => {
                     const off = i - Math.round(positionRef.current)
-                    if (off !== 0) { velocityRef.current = 0; springTo(i) }
+                    if (off !== 0) snapTo(i)
                   }}
                 >
                   <MiniCard card={card} isCenter={Math.abs(i - displayPosition) < 0.3} />
@@ -371,7 +380,7 @@ export function WalletPanel({ walletCards, onRemove, onDrop }: WalletPanelProps)
               {walletCards.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => { velocityRef.current = 0; springTo(i) }}
+                  onClick={() => snapTo(i)}
                   className={`rounded-full transition-all duration-200
                     ${i === focusedIndex
                       ? 'w-4 h-1.5 bg-primary'
@@ -494,9 +503,10 @@ function CoverageList({
   coveredCount: number
   focusedCard: CardGridItem | null
 }) {
+  const gaps = coverage.filter(c => c.best === null)
   return (
     <div className="flex-1 overflow-y-auto px-3 pb-4 min-h-0">
-      <p className="text-[10px] font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-2">
+      <p className="text-xs font-semibold tracking-[0.12em] uppercase text-muted-foreground mb-2 mt-3">
         Coverage
       </p>
       <div className="space-y-px">
@@ -505,32 +515,36 @@ function CoverageList({
           return (
             <div
               key={category}
-              className={`flex items-center justify-between py-1.5 px-2 rounded-sm transition-colors
-                ${wins ? 'bg-primary/10' : 'hover:bg-secondary'}`}
+              className={`px-2 py-1.5 rounded-sm transition-colors ${wins ? 'bg-primary/10' : 'hover:bg-secondary'}`}
             >
-              <span className={`text-sm transition-colors ${wins ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                {formatCategory(category)}
-              </span>
-              <span className={`text-sm font-semibold tabular-nums transition-colors ${wins ? 'text-primary' : 'text-muted-foreground'}`}>
-                {best!.rate}×
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-sm truncate ${wins ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                  {formatCategory(category)}
+                </span>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none flex-shrink-0 ${rateColorClass(best!.rate)}`}>
+                  {best!.rate}×
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground/60 truncate block mt-0.5">
+                {best!.card.name}
               </span>
             </div>
           )
         })}
       </div>
-      {coveredCount < 12 && (
-        <div className="mt-3">
-          <p className="text-[9px] font-semibold tracking-[0.12em] uppercase text-muted-foreground/50 mb-1.5">
-            Gaps
-          </p>
-          <div className="space-y-px">
-            {coverage.filter(c => c.best === null).map(({ category }) => (
-              <div key={category} className="flex items-center justify-between py-1.5 px-2">
-                <span className="text-sm text-muted-foreground/40">{formatCategory(category)}</span>
-                <span className="text-sm text-muted-foreground/30">—</span>
+      {coveredCount < 12 && gaps.length > 0 && (
+        <div className="space-y-px mt-px">
+          {gaps.map(({ category }) => (
+            <div key={category} className="px-2 py-1.5 rounded-sm opacity-40">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm text-foreground/80 truncate">{formatCategory(category)}</span>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm leading-none flex-shrink-0 bg-stone-100 text-stone-400">
+                  —
+                </span>
               </div>
-            ))}
-          </div>
+              <span className="text-[10px] text-muted-foreground/60 block mt-0.5">No card</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
