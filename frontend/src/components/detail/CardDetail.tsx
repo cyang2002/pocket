@@ -48,7 +48,7 @@ export function CardDetail() {
   return (
     <div className="min-h-screen bg-background">
       <div className="px-8 py-4">
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
+        <Link to="/browse" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
       </div>
 
       <div className="px-8 py-4 flex gap-6 items-start">

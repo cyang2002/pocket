@@ -13,7 +13,7 @@ export function CompareView() {
   if (ids.length < 2) {
     return (
       <div className="p-8">
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
+        <Link to="/browse" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
         <p className="mt-4 text-sm text-muted-foreground">Select 2 or 3 cards from the grid to compare.</p>
       </div>
     )
@@ -47,7 +47,7 @@ export function CompareView() {
   return (
     <div className="min-h-screen bg-background">
       <div className="px-8 py-4">
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
+        <Link to="/browse" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
       </div>
 
       <div className="px-8 py-4">
