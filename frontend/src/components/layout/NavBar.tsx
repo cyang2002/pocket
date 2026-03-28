@@ -2,9 +2,13 @@ import { NavLink, Link } from 'react-router-dom'
 
 export function NavBar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="mx-auto max-w-screen-2xl px-8 h-14 flex items-center justify-between">
-        <Link to="/" className="text-sm font-semibold tracking-tight">
+    <header className="sticky top-0 z-40 border-b border-primary/20 bg-background/90 backdrop-blur-sm">
+      <div className="px-8 sm:px-16 h-14 flex items-center justify-between">
+        <Link
+          to="/"
+          className="text-sm font-semibold tracking-tight text-primary"
+          style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}
+        >
           Card Optimizer
         </Link>
         <nav className="flex items-center gap-6">

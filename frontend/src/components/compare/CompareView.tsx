@@ -2,7 +2,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useCompare } from '@/hooks/useCompare'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CATEGORIES, formatCategory } from '@/lib/constants'
+import { CATEGORIES, formatCategory, rateColorClass } from '@/lib/constants'
 import type { CardGridItem } from '@/types/api'
 
 export function CompareView() {
@@ -12,8 +12,8 @@ export function CompareView() {
 
   if (ids.length < 2) {
     return (
-      <div className="p-8">
-        <Link to="/browse" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
+      <div className="px-8 sm:px-16 py-8">
+        <Link to="/browse" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">← Browse</Link>
         <p className="mt-4 text-sm text-muted-foreground">Select 2 or 3 cards from the grid to compare.</p>
       </div>
     )
@@ -46,15 +46,15 @@ export function CompareView() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="px-8 py-4">
-        <Link to="/browse" className="text-sm text-muted-foreground hover:underline">Back to grid</Link>
+      <div className="px-8 sm:px-16 pt-7 pb-4">
+        <Link to="/browse" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">← Browse</Link>
+        <div className="flex items-center gap-2.5 mt-6">
+          <div className="w-[3px] h-5 rounded-full bg-primary" />
+          <h1 className="text-base font-semibold">Comparing {cards.length} Card{cards.length !== 1 ? 's' : ''}</h1>
+        </div>
       </div>
 
-      <div className="px-8 py-4">
-        <h1 className="text-xl font-semibold">Comparing {cards.length} Card{cards.length !== 1 ? 's' : ''}</h1>
-      </div>
-
-      <div className="px-8 overflow-x-auto">
+      <div className="px-8 sm:px-16 overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr>
@@ -100,9 +100,11 @@ export function CompareView() {
                     return (
                       <td
                         key={card.cardId}
-                        className={`text-sm py-3 px-4 border-l border-border ${isBest ? 'bg-indigo-50' : ''}`}
+                        className={`py-3 px-4 border-l border-border`}
                       >
-                        {val != null ? `${val}x` : <span className="text-muted-foreground">—</span>}
+                        {val != null
+                          ? <span className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-sm leading-none ${isBest ? rateColorClass(val) : 'text-foreground'}`}>{val}×</span>
+                          : <span className="text-muted-foreground text-sm">—</span>}
                       </td>
                     )
                   })}

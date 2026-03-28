@@ -12,10 +12,10 @@ export function GridFilters({ filters, onFilterChange, issuers }: GridFiltersPro
   const hasActiveFilters = !!(filters.issuer || filters.isBusiness !== undefined || filters.network || filters.maxFee !== undefined)
 
   return (
-    <div className="bg-secondary p-6">
+    <div className="bg-secondary px-8 sm:px-16 py-5">
       <div className="flex flex-wrap gap-4 items-end">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold">Issuer</label>
+          <label className="text-xs text-muted-foreground font-medium">Issuer</label>
           <Select
             value={filters.issuer ?? ''}
             onValueChange={(v: string | null) => onFilterChange({ ...filters, issuer: v || undefined })}
@@ -33,7 +33,7 @@ export function GridFilters({ filters, onFilterChange, issuers }: GridFiltersPro
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold">Type</label>
+          <label className="text-xs text-muted-foreground font-medium">Type</label>
           <Select
             value={filters.isBusiness === undefined ? '' : String(filters.isBusiness)}
             onValueChange={(v: string | null) => onFilterChange({ ...filters, isBusiness: !v ? undefined : v === 'true' })}
@@ -50,7 +50,7 @@ export function GridFilters({ filters, onFilterChange, issuers }: GridFiltersPro
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold">Network</label>
+          <label className="text-xs text-muted-foreground font-medium">Network</label>
           <Select
             value={filters.network ?? ''}
             onValueChange={(v: string | null) => onFilterChange({ ...filters, network: v || undefined })}
@@ -69,7 +69,7 @@ export function GridFilters({ filters, onFilterChange, issuers }: GridFiltersPro
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold">Annual Fee</label>
+          <label className="text-xs text-muted-foreground font-medium">Annual Fee</label>
           <Select
             value={filters.maxFee === undefined ? '' : String(filters.maxFee)}
             onValueChange={(v: string | null) => onFilterChange({ ...filters, maxFee: !v ? undefined : Number(v) })}
@@ -98,34 +98,6 @@ export function GridFilters({ filters, onFilterChange, issuers }: GridFiltersPro
         )}
       </div>
 
-      {hasActiveFilters && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {filters.issuer && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-600 text-white text-xs">
-              {filters.issuer}
-              <button onClick={() => onFilterChange({ ...filters, issuer: undefined })} className="ml-1">×</button>
-            </span>
-          )}
-          {filters.isBusiness !== undefined && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-600 text-white text-xs">
-              {filters.isBusiness ? 'Business' : 'Personal'}
-              <button onClick={() => onFilterChange({ ...filters, isBusiness: undefined })} className="ml-1">×</button>
-            </span>
-          )}
-          {filters.network && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-600 text-white text-xs">
-              {filters.network}
-              <button onClick={() => onFilterChange({ ...filters, network: undefined })} className="ml-1">×</button>
-            </span>
-          )}
-          {filters.maxFee !== undefined && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-600 text-white text-xs">
-              Max ${filters.maxFee}
-              <button onClick={() => onFilterChange({ ...filters, maxFee: undefined })} className="ml-1">×</button>
-            </span>
-          )}
-        </div>
-      )}
     </div>
   )
 }

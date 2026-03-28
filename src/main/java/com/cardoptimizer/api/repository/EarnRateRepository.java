@@ -17,4 +17,4 @@ public interface EarnRateRepository extends CrudRepository<EarnRate, Long> {
 
     @Query("SELECT * FROM earn_rates ORDER BY card_id, category")
     List<EarnRate> findAll();
-}
+

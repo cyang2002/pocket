@@ -1,23 +1,48 @@
-import { useState, useMemo } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useCardGrid } from '@/hooks/useCardGrid'
 import { GridFilters } from './GridFilters'
-import { StalenessIndicator } from './StalenessIndicator'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { CardTile } from './CardTile'
+import { WalletPanel } from './WalletPanel'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Checkbox } from '@/components/ui/checkbox'
-import { CATEGORIES, formatCategory, formatIssuer } from '@/lib/constants'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { CATEGORIES, formatCategory } from '@/lib/constants'
 import type { GridFilters as GridFiltersType } from '@/types/api'
 
-type SortDir = 'desc' | 'asc'
+function useWallet() {
+  const [wallet, setWallet] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('pocket_wallet')
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+
+  const add = useCallback((cardId: string) => {
+    setWallet(prev => {
+      if (prev.includes(cardId)) return prev
+      const next = [...prev, cardId]
+      localStorage.setItem('pocket_wallet', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const remove = useCallback((cardId: string) => {
+    setWallet(prev => {
+      const next = prev.filter(id => id !== cardId)
+      localStorage.setItem('pocket_wallet', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  return { wallet, add, remove }
+}
 
 export function EarnRateGrid() {
-  const navigate = useNavigate()
   const [filters, setFilters] = useState<GridFiltersType>({})
-  const [staged, setStaged] = useState<string[]>([])
   const [sortCol, setSortCol] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const { wallet, add: addToWallet, remove: removeFromWallet } = useWallet()
 
   const { data, isLoading, isError } = useCardGrid({})
 
@@ -42,169 +67,140 @@ export function EarnRateGrid() {
     return [...filteredData].sort((a, b) => {
       const av = a.earnRates[sortCol] ?? -1
       const bv = b.earnRates[sortCol] ?? -1
-      return sortDir === 'desc' ? bv - av : av - bv
+      return bv - av
     })
-  }, [filteredData, sortCol, sortDir])
+  }, [filteredData, sortCol])
 
-  const maxByCategory = useMemo(() => {
-    const map = new Map<string, number>()
-    CATEGORIES.forEach(cat => {
-      const values = filteredData.map(c => c.earnRates[cat]).filter((v): v is number => v != null)
-      if (values.length > 0) map.set(cat, Math.max(...values))
-    })
-    return map
-  }, [filteredData])
+  const walletCards = useMemo(() => {
+    if (!data) return []
+    return wallet.map(id => data.find(c => c.cardId === id)).filter(Boolean) as NonNullable<typeof data[number]>[]
+  }, [data, wallet])
 
-  function handleSortClick(cat: string) {
-    if (sortCol !== cat) {
-      setSortCol(cat)
-      setSortDir('desc')
-    } else if (sortDir === 'desc') {
-      setSortDir('asc')
-    } else {
-      setSortCol(null)
+  const isFiltered = filteredData.length !== data?.length
+
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+  const isDragging = useRef(false)
+  const dragStartX = useRef(0)
+  const dragStartWidth = useRef(0)
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartWidth.current = sidebarWidth
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return
+      const delta = dragStartX.current - e.clientX
+      setSidebarWidth(Math.max(180, Math.min(520, dragStartWidth.current + delta)))
     }
-  }
 
-  function handleStageToggle(cardId: string, checked: boolean) {
-    if (checked) {
-      if (staged.length >= 3) return
-      setStaged(prev => [...prev, cardId])
-    } else {
-      setStaged(prev => prev.filter(id => id !== cardId))
+    const onMouseUp = () => {
+      isDragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
     }
-  }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [sidebarWidth])
 
   return (
-    <div>
-      <div className="px-8 py-6">
-        <h1 className="text-xl font-semibold">Credit Cards</h1>
+    <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
+      {/* Main content */}
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="px-8 sm:px-16 py-4 flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-[3px] h-5 rounded-full bg-primary" />
+              <h1 className="text-base font-semibold tracking-tight">Browse</h1>
+            </div>
+            {!isLoading && !isError && data && (
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {isFiltered ? `${filteredData.length} of ${data.length}` : data.length} cards
+                {sortCol ? ` · ${formatCategory(sortCol)}` : ''}
+              </span>
+            )}
+            {!isLoading && !isError && (
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Sort</span>
+                <Select value={sortCol ?? ''} onValueChange={v => setSortCol(v || null)}>
+                  <SelectTrigger className="w-36 h-8 text-xs">
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Default</SelectItem>
+                    {CATEGORIES.map(cat => (
+                      <SelectItem key={cat} value={cat}>{formatCategory(cat)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} />
+
+        {isLoading && (
+          <div className="px-8 sm:px-16 py-6 grid grid-cols-2 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <Skeleton key={i} className="w-full rounded" style={{ aspectRatio: '85.6 / 54' }} />
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <div className="px-8 sm:px-16 py-4">
+            <Alert>
+              <AlertDescription>Unable to load card data. Check your connection and try again.</AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {!isLoading && !isError && filteredData.length === 0 && data && data.length > 0 && (
+          <div className="px-8 py-20 text-center">
+            <p className="text-sm font-semibold">No cards match</p>
+            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters.</p>
+          </div>
+        )}
+
+        {!isLoading && !isError && sortedData.length > 0 && (
+          <div className="px-8 sm:px-16 py-6 grid grid-cols-2 lg:grid-cols-3 gap-3">
+            {sortedData.map(card => (
+              <CardTile
+                key={card.cardId}
+                card={card}
+                inWallet={wallet.includes(card.cardId)}
+                onAdd={() => addToWallet(card.cardId)}
+                onRemove={() => removeFromWallet(card.cardId)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      <GridFilters filters={filters} onFilterChange={setFilters} issuers={issuers} />
+      {/* Resize handle */}
+      <div
+        onMouseDown={handleResizeStart}
+        className="w-1 flex-shrink-0 relative cursor-col-resize group"
+      >
+        <div className="absolute inset-y-0 -left-1 -right-1 group-hover:bg-primary/20 transition-colors duration-150" />
+      </div>
 
-      {isLoading && (
-        <div className="px-8 py-4 space-y-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-full" />
-          ))}
-        </div>
-      )}
-
-      {isError && (
-        <div className="px-8 py-4">
-          <Alert>
-            <AlertDescription>Unable to load card data. Check your connection and try again.</AlertDescription>
-          </Alert>
-        </div>
-      )}
-
-      {!isLoading && !isError && filteredData.length === 0 && data && data.length > 0 && (
-        <div className="px-8 py-16 text-center">
-          <h2 className="text-base font-semibold">No cards match your filters</h2>
-          <p className="text-sm text-muted-foreground mt-2">Try adjusting issuer, type, or annual fee range.</p>
-        </div>
-      )}
-
-      {!isLoading && !isError && sortedData.length > 0 && (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-11 sticky left-0 bg-background z-10"></TableHead>
-                <TableHead className="sticky left-11 bg-background z-10 min-w-[180px]">Card</TableHead>
-                {CATEGORIES.map(cat => {
-                  const isActive = sortCol === cat
-                  return (
-                    <TableHead
-                      key={cat}
-                      className="text-xs font-semibold py-3 px-4 min-w-[80px] cursor-pointer select-none hover:text-foreground transition-colors"
-                      onClick={() => handleSortClick(cat)}
-                    >
-                      <span className="flex items-center gap-1">
-                        {formatCategory(cat)}
-                        <span className={`text-[10px] ${isActive ? 'text-foreground' : 'text-muted-foreground/40'}`}>
-                          {isActive ? (sortDir === 'desc' ? '↓' : '↑') : '↕'}
-                        </span>
-                      </span>
-                    </TableHead>
-                  )
-                })}
-                <TableHead className="text-xs font-semibold py-3 px-4">Annual Fee</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedData.map(card => {
-                const hasRates = Object.values(card.earnRates).some(v => v != null)
-                return (
-                  <TableRow key={card.cardId}>
-                    <TableCell className="w-11 sticky left-0 bg-background z-10">
-                      <Checkbox
-                        checked={staged.includes(card.cardId)}
-                        onCheckedChange={(checked) => handleStageToggle(card.cardId, !!checked)}
-                        disabled={!staged.includes(card.cardId) && staged.length >= 3}
-                      />
-                    </TableCell>
-                    <TableCell className="sticky left-11 bg-background z-10 min-w-[180px] py-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <Link to={"/cards/" + card.cardId} className="font-medium hover:underline">{card.name}</Link>
-                        <span className="text-xs text-muted-foreground">{formatIssuer(card.issuer)}</span>
-                        {card.isStale && hasRates && <StalenessIndicator abbreviated />}
-                      </div>
-                    </TableCell>
-                    {CATEGORIES.map(cat => {
-                      const val = card.earnRates[cat]
-                      const max = maxByCategory.get(cat)
-                      const isBest = val != null && max != null && val === max && max > 0
-                      return (
-                        <TableCell
-                          key={cat}
-                          className={`py-3 px-4 ${isBest ? 'bg-amber-50 text-amber-900 font-semibold' : ''}`}
-                        >
-                          {val != null
-                            ? `${val}x`
-                            : <span className="text-muted-foreground">&#x2014;</span>
-                          }
-                        </TableCell>
-                      )
-                    })}
-                    <TableCell className="py-3 px-4">
-                      ${card.annualFee}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {staged.length >= 2 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg p-4 flex items-center justify-between">
-          <div className="flex gap-3">
-            {staged.map(id => {
-              const card = data?.find(c => c.cardId === id)
-              return card ? (
-                <span key={id} className="text-sm font-semibold flex items-center gap-1.5">
-                  {card.name}
-                  <button
-                    onClick={() => handleStageToggle(id, false)}
-                    className="text-muted-foreground hover:text-foreground text-xs leading-none"
-                  >
-                    ×
-                  </button>
-                </span>
-              ) : null
-            })}
-          </div>
-          <button
-            onClick={() => navigate(`/compare?ids=${staged.join(',')}`)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-semibold min-h-11"
-          >
-            Compare Cards
-          </button>
-        </div>
-      )}
+      {/* Wallet sidebar */}
+      <div className="flex-shrink-0 border-l border-primary/25 overflow-hidden" style={{ width: sidebarWidth }}>
+        <WalletPanel
+          walletCards={walletCards}
+          onRemove={removeFromWallet}
+          onDrop={addToWallet}
+        />
+      </div>
     </div>
   )
 }
