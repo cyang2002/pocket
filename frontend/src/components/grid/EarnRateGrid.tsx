@@ -54,8 +54,11 @@ export function EarnRateGrid() {
   const [showWallet, setShowWallet] = useState(() => {
     try { return localStorage.getItem('pocket_show_wallet') !== 'false' } catch { return true }
   })
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    try { return localStorage.getItem('pocket_view_mode') === 'list' ? 'list' : 'grid' } catch { return 'grid' }
+  const [viewMode, setViewMode] = useState<'5col' | '3col' | 'list'>(() => {
+    try {
+      const v = localStorage.getItem('pocket_view_mode')
+      return v === '5col' || v === '3col' || v === 'list' ? v : '3col'
+    } catch { return '3col' }
   })
   const { wallet, add: addToWallet, remove: removeFromWallet, clear: clearWallet } = useWallet()
 
@@ -173,29 +176,46 @@ export function EarnRateGrid() {
             {!isLoading && !isError && (
               <div className="ml-auto flex items-center gap-2">
               <div className="flex rounded border border-border overflow-hidden">
-                <button
-                  onClick={() => { setViewMode('grid'); localStorage.setItem('pocket_view_mode', 'grid') }}
-                  className={`h-8 w-8 flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-secondary text-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/60'}`}
-                  aria-label="Grid view"
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                    <rect x="1" y="1" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="7" y="1" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="1" y="7" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.9"/>
-                    <rect x="7" y="7" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.9"/>
-                  </svg>
-                </button>
-                <button
-                  onClick={() => { setViewMode('list'); localStorage.setItem('pocket_view_mode', 'list') }}
-                  className={`h-8 w-8 flex items-center justify-center transition-colors border-l border-border ${viewMode === 'list' ? 'bg-secondary text-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/60'}`}
-                  aria-label="List view"
-                >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                    <rect x="1" y="1.5" width="10" height="1.5" rx="0.5" fill="currentColor"/>
-                    <rect x="1" y="5.25" width="10" height="1.5" rx="0.5" fill="currentColor"/>
-                    <rect x="1" y="9" width="10" height="1.5" rx="0.5" fill="currentColor"/>
-                  </svg>
-                </button>
+                {([
+                  { mode: '5col', label: 'Wide grid (5 columns)', icon: (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                      <rect x="0.5" y="0.5" width="2" height="5" rx="0.3"/>
+                      <rect x="3.5" y="0.5" width="2" height="5" rx="0.3"/>
+                      <rect x="6.5" y="0.5" width="2" height="5" rx="0.3"/>
+                      <rect x="9.5" y="0.5" width="2" height="5" rx="0.3"/>
+                      <rect x="0.5" y="6.5" width="2" height="5" rx="0.3"/>
+                      <rect x="3.5" y="6.5" width="2" height="5" rx="0.3"/>
+                      <rect x="6.5" y="6.5" width="2" height="5" rx="0.3"/>
+                      <rect x="9.5" y="6.5" width="2" height="5" rx="0.3"/>
+                    </svg>
+                  )},
+                  { mode: '3col', label: 'Standard grid (3 columns)', icon: (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                      <rect x="1" y="1" width="3" height="4.5" rx="0.4"/>
+                      <rect x="5" y="1" width="3" height="4.5" rx="0.4"/>
+                      <rect x="9" y="1" width="2" height="4.5" rx="0.4"/>
+                      <rect x="1" y="6.5" width="3" height="4.5" rx="0.4"/>
+                      <rect x="5" y="6.5" width="3" height="4.5" rx="0.4"/>
+                      <rect x="9" y="6.5" width="2" height="4.5" rx="0.4"/>
+                    </svg>
+                  )},
+                  { mode: 'list', label: 'List view', icon: (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+                      <rect x="1" y="1.5" width="10" height="1.5" rx="0.5"/>
+                      <rect x="1" y="5.25" width="10" height="1.5" rx="0.5"/>
+                      <rect x="1" y="9" width="10" height="1.5" rx="0.5"/>
+                    </svg>
+                  )},
+                ] as const).map(({ mode, label, icon }, i) => (
+                  <button
+                    key={mode}
+                    onClick={() => { setViewMode(mode); localStorage.setItem('pocket_view_mode', mode) }}
+                    className={`h-8 w-8 flex items-center justify-center transition-colors ${i > 0 ? 'border-l border-border' : ''} ${viewMode === mode ? 'bg-secondary text-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/60'}`}
+                    aria-label={label}
+                  >
+                    {icon}
+                  </button>
+                ))}
               </div>
               <button
                 onClick={() => setShowFilters(v => { const next = !v; localStorage.setItem('pocket_show_filters', String(next)); return next })}
@@ -256,7 +276,11 @@ export function EarnRateGrid() {
         </div>
 
         {isLoading && (
-          <div className={`px-8 sm:px-16 py-8 grid gap-4 ${viewMode === 'list' ? 'grid-cols-1 gap-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+          <div className={`px-8 sm:px-16 py-8 grid ${
+            viewMode === 'list' ? 'grid-cols-1 gap-2'
+            : viewMode === '5col' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+          }`}>
             {Array.from({ length: 9 }).map((_, i) => (
               <Skeleton key={i} className="w-full rounded" style={viewMode === 'list' ? { height: 56 } : { aspectRatio: '85.6 / 54' }} />
             ))}
@@ -279,7 +303,11 @@ export function EarnRateGrid() {
         )}
 
         {!isLoading && !isError && sortedData.length > 0 && (
-          <div className={`px-8 sm:px-16 py-8 grid ${viewMode === 'list' ? 'grid-cols-1 gap-2' : 'grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+          <div className={`px-8 sm:px-16 py-8 grid ${
+            viewMode === 'list' ? 'grid-cols-1 gap-2'
+            : viewMode === '5col' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+          }`}>
             {sortedData.map(card => (
               <CardTile
                 key={card.cardId}
@@ -287,7 +315,7 @@ export function EarnRateGrid() {
                 inWallet={wallet.includes(card.cardId)}
                 onAdd={() => addToWallet(card.cardId)}
                 onRemove={() => removeFromWallet(card.cardId)}
-                viewMode={viewMode}
+                viewMode={viewMode === 'list' ? 'list' : 'grid'}
               />
             ))}
           </div>
