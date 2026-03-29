@@ -188,6 +188,10 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
     <div className="select-none" style={{ touchAction: 'none' }}>
       <div
         ref={cardRef}
+        role="button"
+        tabIndex={0}
+        aria-label="Swipe right or press Enter to browse all cards"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flyOff(x, FLICK_VX) } }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -224,10 +228,10 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
         <div className="h-full px-5 pt-4 pb-4 flex flex-col">
           {/* Issuer + fee */}
           <div className="flex items-start justify-between">
-            <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-white/55">
+            <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-white/70">
               {formatIssuer(card?.issuer ?? '')}
             </span>
-            <span className="text-[8px] font-medium tabular-nums text-white/35">
+            <span className="text-[8px] font-medium tabular-nums text-white/55">
               {card && (card.annualFee === 0 ? 'No fee' : `$${card.annualFee}/yr`)}
             </span>
           </div>

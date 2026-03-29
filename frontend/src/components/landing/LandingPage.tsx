@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, formatCategory } from '@/lib/constants'
 import { useCardGrid } from '@/hooks/useCardGrid'
@@ -24,7 +24,10 @@ function buildChallenges(cards: CardGridItem[]) {
 }
 
 function useFlipDisplay(cards: CardGridItem[] | undefined) {
-  const challenges = cards?.length ? buildChallenges(cards) : []
+  const challenges = useMemo(
+    () => cards?.length ? buildChallenges(cards) : [],
+    [cards]
+  )
   const [idx, setIdx] = useState(0)
   const [flipping, setFlipping] = useState(false)
 
@@ -119,7 +122,7 @@ export function LandingPage() {
 
         {/* Swipe arrow — sits just outside the card's right edge, user drags card toward it */}
         <div
-          className="absolute pointer-events-none left-[360px] sm:left-[392px]"
+          className="absolute pointer-events-none left-[288px] sm:left-[360px] md:left-[392px]"
           style={{ top: Math.round(SHOW_H / 2) - 20, zIndex: 20 }}
         >
           <svg
@@ -195,11 +198,11 @@ export function LandingPage() {
               animation: 'reader-led 3s ease-in-out infinite',
             }}
           />
-          <span className="text-xs text-muted-foreground/70">swipe to browse</span>
+          <span className="text-xs text-muted-foreground/80">swipe to browse</span>
           <span className="text-border select-none">·</span>
           <Link
             to="/browse"
-            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2"
+            className="text-xs text-muted-foreground/75 hover:text-muted-foreground transition-colors underline underline-offset-2"
           >
             browse all cards
           </Link>
@@ -223,7 +226,7 @@ export function LandingPage() {
 
       {/* Stats — large, centered, below the reader */}
       <div className="pt-10 pb-8 flex justify-center">
-        <p className="text-[clamp(0.95rem,1.8vw,1.15rem)] text-muted-foreground/65 text-center"
+        <p className="text-[clamp(0.95rem,1.8vw,1.15rem)] text-muted-foreground/80 text-center"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           {cardCount != null && (
