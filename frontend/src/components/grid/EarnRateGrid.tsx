@@ -60,6 +60,15 @@ export function EarnRateGrid() {
       return v === '5col' || v === '3col' || v === 'list' ? v : '3col'
     } catch { return '3col' }
   })
+  const [gridFading, setGridFading] = useState(false)
+  const changeView = useCallback((next: '5col' | '3col' | 'list') => {
+    setGridFading(true)
+    setTimeout(() => {
+      setViewMode(next)
+      localStorage.setItem('pocket_view_mode', next)
+      setGridFading(false)
+    }, 130)
+  }, [])
   const { wallet, add: addToWallet, remove: removeFromWallet, clear: clearWallet } = useWallet()
 
   const [isCardDragging, setIsCardDragging] = useState(false)
@@ -73,6 +82,28 @@ export function EarnRateGrid() {
       document.removeEventListener('dragend', onEnd)
     }
   }, [])
+
+  const lastZoomAt = useRef(0)
+  useEffect(() => {
+    const MODES = ['list', '3col', '5col'] as const
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const now = Date.now()
+      if (now - lastZoomAt.current < 320) return
+      lastZoomAt.current = now
+      setViewMode(prev => {
+        const idx = MODES.indexOf(prev)
+        const next = e.deltaY > 0
+          ? MODES[Math.min(idx + 1, MODES.length - 1)]
+          : MODES[Math.max(idx - 1, 0)]
+        if (next !== prev) changeView(next)
+        return prev
+      })
+    }
+    window.addEventListener('wheel', onWheel, { passive: false })
+    return () => window.removeEventListener('wheel', onWheel)
+  }, [changeView])
 
   const { data, isLoading, isError } = useCardGrid({})
 
@@ -209,7 +240,7 @@ export function EarnRateGrid() {
                 ] as const).map(({ mode, label, icon }, i) => (
                   <button
                     key={mode}
-                    onClick={() => { setViewMode(mode); localStorage.setItem('pocket_view_mode', mode) }}
+                    onClick={() => changeView(mode)}
                     className={`h-8 w-8 flex items-center justify-center transition-colors ${i > 0 ? 'border-l border-border' : ''} ${viewMode === mode ? 'bg-secondary text-foreground' : 'bg-background text-muted-foreground hover:bg-secondary/60'}`}
                     aria-label={label}
                   >
@@ -303,11 +334,18 @@ export function EarnRateGrid() {
         )}
 
         {!isLoading && !isError && sortedData.length > 0 && (
-          <div className={`px-8 sm:px-16 py-8 grid ${
-            viewMode === 'list' ? 'grid-cols-1 gap-2'
-            : viewMode === '5col' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
-            : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
-          }`}>
+          <div
+            className={`px-8 sm:px-16 py-8 grid ${
+              viewMode === 'list' ? 'grid-cols-1 gap-2'
+              : viewMode === '5col' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+            }`}
+            style={{
+              opacity: gridFading ? 0 : 1,
+              transform: gridFading ? 'scale(0.985)' : 'scale(1)',
+              transition: 'opacity 130ms ease-out, transform 130ms ease-out',
+            }}
+          >
             {sortedData.map(card => (
               <CardTile
                 key={card.cardId}
