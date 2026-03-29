@@ -189,7 +189,7 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
           cursor:        isFlying ? 'default' : isDrag ? 'grabbing' : 'grab',
           pointerEvents: isFlying ? 'none' : undefined,
           willChange:    'transform',
-          background:    'linear-gradient(135deg, oklch(26% 0.04 240) 0%, oklch(20% 0.03 255) 60%, oklch(23% 0.035 248) 100%)',
+          background:    'var(--lp-card-bg)',
           boxShadow: [
             '0 2px 4px oklch(0% 0 0 / 0.45)',
             '0 8px 24px oklch(0% 0 0 / 0.2)',
@@ -234,16 +234,16 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
             <div
               style={{
                 width: 28, height: 20, borderRadius: 3, flexShrink: 0,
-                background: 'linear-gradient(145deg, oklch(80% 0.05 80), oklch(68% 0.04 74))',
-                border: '0.5px solid oklch(62% 0.04 74 / 0.6)',
+                background: 'var(--lp-chip-bg)',
+                border: '0.5px solid var(--lp-chip-border)',
                 display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: '1fr 1fr',
                 overflow: 'hidden',
               }}
             >
               {[0,1,2,3,4,5].map(i => (
                 <div key={i} style={{
-                  borderRight:  i % 3 !== 2 ? '0.5px solid oklch(55% 0.03 74 / 0.4)' : undefined,
-                  borderBottom: i < 3       ? '0.5px solid oklch(55% 0.03 74 / 0.4)' : undefined,
+                  borderRight:  i % 3 !== 2 ? '0.5px solid var(--lp-chip-line)' : undefined,
+                  borderBottom: i < 3       ? '0.5px solid var(--lp-chip-line)' : undefined,
                 }} />
               ))}
             </div>
@@ -266,8 +266,8 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
         </div>
 
         <div className="absolute bottom-4 right-5 flex items-center">
-          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'oklch(58% 0.18 28 / 0.72)' }} />
-          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'oklch(72% 0.15 65 / 0.72)', marginLeft: -8 }} />
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--lp-network-red)' }} />
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--lp-network-amber)', marginLeft: -8 }} />
         </div>
       </div>
 

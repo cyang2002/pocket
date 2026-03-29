@@ -127,6 +127,21 @@
     }
 }
 
+:root {
+    /* Landing page — card + reader */
+    --lp-card-bg:       linear-gradient(135deg, oklch(26% 0.04 240) 0%, oklch(20% 0.03 255) 60%, oklch(23% 0.035 248) 100%);
+    --lp-chip-bg:       linear-gradient(145deg, oklch(80% 0.05 80), oklch(68% 0.04 74));
+    --lp-chip-border:   oklch(62% 0.04 74 / 0.6);
+    --lp-chip-line:     oklch(55% 0.03 74 / 0.4);
+    --lp-network-red:   oklch(58% 0.18 28 / 0.72);
+    --lp-network-amber: oklch(72% 0.15 65 / 0.72);
+    --lp-arrow-stroke:  oklch(30% 0.04 240);
+    --lp-housing-bg:    oklch(95% 0.007 75);
+    --lp-slot-groove:   oklch(52% 0.015 240 / 0.45);
+    --lp-led:           oklch(68% 0.15 148);
+    --lp-led-glow:      oklch(68% 0.15 148 / 0.45);
+}
+
 @layer utilities {
     /* Winner cell in earn rate grid */
     .earn-winner {

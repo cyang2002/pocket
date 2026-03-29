@@ -132,7 +132,7 @@ export function LandingPage() {
           >
             <path
               d="M8 20 L106 20"
-              stroke="oklch(30% 0.04 240)"
+              stroke="var(--lp-arrow-stroke)"
               strokeWidth="4"
               strokeDasharray="1 13"
               strokeLinecap="round"
@@ -141,7 +141,7 @@ export function LandingPage() {
             />
             <polyline
               points="114,7 135,20 114,33"
-              stroke="oklch(30% 0.04 240)"
+              stroke="var(--lp-arrow-stroke)"
               strokeWidth="4"
               fill="none"
               strokeLinecap="round"
@@ -156,10 +156,10 @@ export function LandingPage() {
         />
       </div>
 
-      <div style={{ background: 'oklch(95% 0.007 75)', boxShadow: 'inset 0 1px 0 oklch(100% 0 0 / 0.5)' }}>
+      <div style={{ background: 'var(--lp-housing-bg)', boxShadow: 'inset 0 1px 0 oklch(100% 0 0 / 0.5)' }}>
         <div style={{
           height: 4,
-          background: 'oklch(52% 0.015 240 / 0.45)',
+          background: 'var(--lp-slot-groove)',
           boxShadow: 'inset 0 2px 4px oklch(0% 0 0 / 0.25), 0 1px 0 oklch(100% 0 0 / 0.55)',
         }} />
 
@@ -168,8 +168,8 @@ export function LandingPage() {
             className="reader-led"
             style={{
               width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
-              background: 'oklch(68% 0.15 148)',
-              boxShadow: '0 0 6px oklch(68% 0.15 148 / 0.45)',
+              background: 'var(--lp-led)',
+              boxShadow: '0 0 6px var(--lp-led-glow)',
               animation: 'reader-led 3s ease-in-out infinite',
             }}
           />
