@@ -66,7 +66,7 @@ export function LandingPage() {
           className="text-[clamp(2.8rem,6vw,4.8rem)] font-normal leading-[1.08] tracking-tight text-foreground"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          Every swipe,<br />maximized.
+          Optimized for<br />your <i className="text-primary">Pocket</i>.
         </h1>
         <div className="mt-5" style={{ perspective: 600, minHeight: '1.5rem' }}>
           <div
