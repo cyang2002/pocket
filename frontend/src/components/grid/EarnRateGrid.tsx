@@ -209,7 +209,7 @@ export function EarnRateGrid() {
                 {wallet.length > 0 && (
                   <span className={`text-[10px] font-bold tabular-nums px-1 py-0.5 rounded-sm leading-none
                     ${showWallet ? 'bg-primary/15 text-primary' : 'bg-primary text-primary-foreground'}`}>
-                    {wallet.length - 1}
+                    {wallet.length}
                   </span>
                 )}
               </button>
