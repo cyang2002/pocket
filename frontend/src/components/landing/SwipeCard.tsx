@@ -4,10 +4,10 @@ import { formatIssuer, formatCategory, getTopRates } from '@/lib/constants'
 import type { CardGridItem } from '@/types/api'
 
 export const CARD_W = 320
-export const CARD_H = Math.round(CARD_W * 54 / 85.6) // credit card aspect ratio ~202px
+export const CARD_H = Math.round(CARD_W * 54 / 85.6)
 
-const FLICK_VX = 0.52   // px/ms — velocity threshold for a flick
-const DIST_PCT = 0.42   // fraction of CARD_W for position-based trigger
+const FLICK_VX = 0.52
+const DIST_PCT = 0.42
 
 function springStep(pos: number, vel: number, target: number) {
   const k = 0.13, d = 0.76
@@ -26,25 +26,26 @@ interface SwipeCardProps {
 }
 
 export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
-  const navigate = useNavigate()
-  const cardRef  = useRef<HTMLDivElement>(null)
-  const rafRef   = useRef<number>()
-  const done     = useRef(false)
+  const navigate  = useNavigate()
+  const cardRef   = useRef<HTMLDivElement>(null)
+  const rafRef    = useRef<number>()
+  const flyTimer  = useRef<ReturnType<typeof setTimeout>>()
+  const done      = useRef(false)
+  const nudgeDone = useRef(false)
 
   const [x,     setX]     = useState(0)
   const [phase, setPhase] = useState<'idle' | 'dragging' | 'snapping' | 'flying'>('idle')
+
+  const sPos    = useRef(0)
+  const sVel    = useRef(0)
+  const originX = useRef(0)
+  const originCX = useRef(0)
+  const velBuf  = useRef<{ x: number; t: number }[]>([])
 
   function updateX(val: number) {
     setX(val)
     onDrag?.(val)
   }
-
-  const sPos      = useRef(0)
-  const sVel      = useRef(0)
-  const originX   = useRef(0)
-  const originCX  = useRef(0)
-  const velBuf    = useRef<{ x: number; t: number }[]>([])
-  const nudgeDone = useRef(false)
 
   function stop() {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -58,35 +59,7 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
     return dt > 0 ? dx / dt : 0
   }
 
-  function flyOff(curX: number, vx: number) {
-    if (done.current) return
-    done.current = true
-    setPhase('flying')
-
-    if (prefersReducedMotion()) {
-      navigate('/browse')
-      return
-    }
-
-    const el = cardRef.current
-    if (!el) { navigate('/browse'); return }
-
-    const speed = Math.max(Math.abs(vx), FLICK_VX)
-    const dur   = Math.round(Math.max(160, Math.min(300, 240 / (speed / FLICK_VX))))
-    const flyTo = window.innerWidth * 1.1
-
-    el.animate(
-      [
-        { transform: `translateX(${curX}px)` },
-        { transform: `translateX(${flyTo}px)` },
-      ],
-      { duration: dur, easing: 'cubic-bezier(0.15, 0.0, 0.25, 1.0)', fill: 'forwards' }
-    )
-
-    setTimeout(() => navigate('/browse'), dur - 20)
-  }
-
-  function snapBack(fromX: number) {
+  function runSpringTo(fromX: number) {
     stop()
     sPos.current = fromX
     sVel.current = 0
@@ -108,6 +81,33 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
     rafRef.current = requestAnimationFrame(tick)
   }
 
+  function flyOff(curX: number, vx: number) {
+    if (done.current) return
+    done.current = true
+    setPhase('flying')
+
+    if (prefersReducedMotion()) {
+      navigate('/browse')
+      return
+    }
+
+    const el = cardRef.current
+    if (!el) { navigate('/browse'); return }
+
+    const speed = Math.max(Math.abs(vx), FLICK_VX)
+    const dur   = Math.round(Math.max(160, Math.min(300, 240 / (speed / FLICK_VX))))
+
+    el.animate(
+      [
+        { transform: `translateX(${curX}px)` },
+        { transform: `translateX(${window.innerWidth * 1.1}px)` },
+      ],
+      { duration: dur, easing: 'cubic-bezier(0.15, 0.0, 0.25, 1.0)', fill: 'forwards' }
+    )
+
+    flyTimer.current = setTimeout(() => navigate('/browse'), dur - 20)
+  }
+
   function onPointerDown(e: React.PointerEvent) {
     if (phase === 'flying') return
     e.preventDefault()
@@ -122,13 +122,11 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
   function onPointerMove(e: React.PointerEvent) {
     if (phase !== 'dragging') return
     const raw  = e.clientX - originCX.current
-    const newX = raw < 0
-      ? originX.current + raw * 0.1
-      : originX.current + raw
-    updateX(newX)
+    updateX(raw < 0 ? originX.current + raw * 0.1 : originX.current + raw)
 
     const now = performance.now()
     velBuf.current.push({ x: e.clientX, t: now })
+    if (velBuf.current.length > 100) velBuf.current = velBuf.current.slice(-100)
     velBuf.current = velBuf.current.filter(p => now - p.t < 130)
   }
 
@@ -138,41 +136,26 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
     if (vx > FLICK_VX || x > CARD_W * DIST_PCT) {
       flyOff(x, vx)
     } else {
-      snapBack(x)
+      runSpringTo(x)
     }
   }
 
   function onPointerCancel() {
-    if (phase === 'dragging') snapBack(x)
+    if (phase === 'dragging') runSpringTo(x)
   }
 
-  useEffect(() => () => stop(), [])
+  useEffect(() => () => {
+    stop()
+    clearTimeout(flyTimer.current)
+  }, [])
 
-  // Nudge right on first card load to signal draggability
   useEffect(() => {
     if (!card || nudgeDone.current || prefersReducedMotion()) return
     nudgeDone.current = true
     const id = setTimeout(() => {
       if (done.current) return
-      stop()
-      sPos.current = 28
-      sVel.current = 0
       updateX(28)
-      setPhase('snapping')
-      function tick() {
-        const s = springStep(sPos.current, sVel.current, 0)
-        sPos.current = s.pos
-        sVel.current = s.vel
-        updateX(s.pos)
-        if (Math.abs(s.pos) > 0.35 || Math.abs(s.vel) > 0.07) {
-          rafRef.current = requestAnimationFrame(tick)
-        } else {
-          updateX(0)
-          sPos.current = 0
-          setPhase('idle')
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick)
+      runSpringTo(28)
     }, 1000)
     return () => clearTimeout(id)
   }, [card])
@@ -180,9 +163,7 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
   const isDrag   = phase === 'dragging'
   const isFlying = phase === 'flying'
   const progress = isDrag ? Math.min(1, Math.max(0, x / (CARD_W * DIST_PCT))) : 0
-
-  const transform = isFlying ? undefined : `translateX(${x}px)`
-  const topRates  = card ? getTopRates(card.earnRates, 2) : []
+  const topRates = card ? getTopRates(card.earnRates, 2) : []
 
   return (
     <div className="select-none" style={{ touchAction: 'none' }}>
@@ -201,8 +182,8 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
           position:      'relative',
           width:         CARD_W,
           height:        CARD_H,
-          transform,
-          transition: isDrag || phase === 'snapping' || isFlying
+          transform:     isFlying ? undefined : `translateX(${x}px)`,
+          transition:    isDrag || phase === 'snapping' || isFlying
             ? 'opacity 300ms ease-out'
             : 'transform 200ms ease-out, opacity 300ms ease-out',
           cursor:        isFlying ? 'default' : isDrag ? 'grabbing' : 'grab',
@@ -215,18 +196,16 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
             '0 24px 60px oklch(0% 0 0 / 0.12)',
             'inset 0 1px 0 oklch(100% 0 0 / 0.09)',
           ].join(', '),
-          opacity:       card ? 1 : 0,
+          opacity: card ? 1 : 0,
         }}
         className="rounded-xl overflow-hidden"
       >
-        {/* Top-left light catch — suggests plastic/metal surface */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'linear-gradient(135deg, oklch(100% 0 0 / 0.06) 0%, transparent 45%)', borderRadius: 'inherit' }}
         />
 
         <div className="h-full px-5 pt-4 pb-4 flex flex-col">
-          {/* Issuer + fee */}
           <div className="flex items-start justify-between">
             <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-white/70">
               {formatIssuer(card?.issuer ?? '')}
@@ -236,7 +215,6 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
             </span>
           </div>
 
-          {/* Earn rates — up top, visible in landing page clip zone */}
           {topRates.length > 0 && (
             <div className="mt-3 flex gap-4">
               {topRates.map(([cat, val]) => (
@@ -252,7 +230,6 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
             </div>
           )}
 
-          {/* Chip + number dots + name — decorative, behind fade on landing */}
           <div className="mt-auto">
             <div
               style={{
@@ -266,7 +243,7 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
               {[0,1,2,3,4,5].map(i => (
                 <div key={i} style={{
                   borderRight:  i % 3 !== 2 ? '0.5px solid oklch(55% 0.03 74 / 0.4)' : undefined,
-                  borderBottom: i < 3      ? '0.5px solid oklch(55% 0.03 74 / 0.4)' : undefined,
+                  borderBottom: i < 3       ? '0.5px solid oklch(55% 0.03 74 / 0.4)' : undefined,
                 }} />
               ))}
             </div>
@@ -288,17 +265,9 @@ export function SwipeCard({ card, showHint = true, onDrag }: SwipeCardProps) {
           </div>
         </div>
 
-        {/* Network emblem — two overlapping circles, bottom-right */}
         <div className="absolute bottom-4 right-5 flex items-center">
-          <div style={{
-            width: 18, height: 18, borderRadius: '50%',
-            background: 'oklch(58% 0.18 28 / 0.72)',
-          }} />
-          <div style={{
-            width: 18, height: 18, borderRadius: '50%',
-            background: 'oklch(72% 0.15 65 / 0.72)',
-            marginLeft: -8,
-          }} />
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'oklch(58% 0.18 28 / 0.72)' }} />
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'oklch(72% 0.15 65 / 0.72)', marginLeft: -8 }} />
         </div>
       </div>
 

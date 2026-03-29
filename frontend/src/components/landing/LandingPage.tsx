@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, formatCategory } from '@/lib/constants'
 import { useCardGrid } from '@/hooks/useCardGrid'
-import { SwipeCard, CARD_H, CARD_W } from './SwipeCard'
+import { SwipeCard, CARD_H } from './SwipeCard'
 import type { CardGridItem } from '@/types/api'
 
-const SHOW_H    = Math.round(CARD_H * 0.68)  // ~137px — card enters terminal below this
-const SECTION_H = SHOW_H
+const SHOW_H = Math.round(CARD_H * 0.68)
 
 const CHALLENGE_CATS = CATEGORIES.filter(c => c !== 'other' && c !== 'business')
 
@@ -69,7 +68,6 @@ export function LandingPage() {
         >
           Every swipe,<br />maximized.
         </h1>
-        {/* Rotating challenge — replaces the old stats line, same small format */}
         <div className="mt-5" style={{ perspective: 600, minHeight: '1.5rem' }}>
           <div
             className="flex items-center gap-2 text-sm text-muted-foreground"
@@ -94,8 +92,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Card — clipped at slot entry point */}
-      <div className="relative overflow-hidden" style={{ height: SECTION_H }}>
+      <div className="relative overflow-hidden" style={{ height: SHOW_H }}>
         <style>{`
           @keyframes swipe-dot-flow {
             from { stroke-dashoffset: 14; }
@@ -120,16 +117,12 @@ export function LandingPage() {
           <SwipeCard card={featuredCard} showHint={false} onDrag={setDragX} />
         </div>
 
-        {/* Swipe arrow — sits just outside the card's right edge, user drags card toward it */}
         <div
           className="absolute pointer-events-none left-[288px] sm:left-[360px] md:left-[392px]"
           style={{ top: Math.round(SHOW_H / 2) - 20, zIndex: 20 }}
         >
           <svg
-            width="140"
-            height="40"
-            viewBox="0 0 140 40"
-            fill="none"
+            width="140" height="40" viewBox="0 0 140 40" fill="none"
             className="swipe-arrow-svg"
             style={
               dragX > 0
@@ -137,7 +130,6 @@ export function LandingPage() {
                 : { animation: 'swipe-fade 2.6s ease-in-out infinite' }
             }
           >
-            {/* Round dot tail */}
             <path
               d="M8 20 L106 20"
               stroke="oklch(30% 0.04 240)"
@@ -147,7 +139,6 @@ export function LandingPage() {
               className="swipe-arrow-line"
               style={{ animation: 'swipe-dot-flow 1.8s linear infinite' }}
             />
-            {/* Arrowhead at tip — rightmost, always visible */}
             <polyline
               points="114,7 135,20 114,33"
               stroke="oklch(30% 0.04 240)"
@@ -159,36 +150,20 @@ export function LandingPage() {
           </svg>
         </div>
 
-        {/* Slot-entry shadow — soft darkening as card approaches groove */}
         <div
           className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{
-            height: 32,
-            zIndex: 10,
-            background: 'linear-gradient(to bottom, transparent, oklch(0% 0 0 / 0.07))',
-          }}
+          style={{ height: 32, zIndex: 10, background: 'linear-gradient(to bottom, transparent, oklch(0% 0 0 / 0.07))' }}
         />
       </div>
 
-      {/* Card reader housing */}
-      <div style={{
-        background: 'oklch(95% 0.007 75)',
-        boxShadow: 'inset 0 1px 0 oklch(100% 0 0 / 0.5)',
-      }}>
-
-        {/* Card slot groove — thin recessed line with shadow depth */}
+      <div style={{ background: 'oklch(95% 0.007 75)', boxShadow: 'inset 0 1px 0 oklch(100% 0 0 / 0.5)' }}>
         <div style={{
           height: 4,
           background: 'oklch(52% 0.015 240 / 0.45)',
-          boxShadow: [
-            'inset 0 2px 4px oklch(0% 0 0 / 0.25)',
-            '0 1px 0 oklch(100% 0 0 / 0.55)',
-          ].join(', '),
+          boxShadow: 'inset 0 2px 4px oklch(0% 0 0 / 0.25), 0 1px 0 oklch(100% 0 0 / 0.55)',
         }} />
 
-        {/* Housing body */}
         <div className="px-8 sm:px-16 pt-4 pb-10 flex items-center gap-3">
-          {/* Ready LED */}
           <div
             className="reader-led"
             style={{
@@ -202,31 +177,26 @@ export function LandingPage() {
           <span className="text-border select-none">·</span>
           <Link
             to="/browse"
-            className="text-xs text-muted-foreground/75 hover:text-muted-foreground transition-colors underline underline-offset-2"
+            className="text-xs text-muted-foreground/75 hover:text-muted-foreground transition-colors underline underline-offset-2 py-2 -my-2"
           >
             browse all cards
           </Link>
 
-          {/* Embossed card-swipe icon — molded into the housing */}
           <svg
             className="ml-auto flex-shrink-0"
             width="32" height="22" viewBox="0 0 32 22" fill="none"
             style={{ opacity: 0.18 }}
           >
-            <rect x="1" y="4" width="18" height="13" rx="1.5"
-              stroke="currentColor" strokeWidth="1.2" />
-            <rect x="3.5" y="7.5" width="5" height="3.5" rx="0.5"
-              stroke="currentColor" strokeWidth="0.8" />
-            <polyline points="24,7 28,11 24,15"
-              stroke="currentColor" strokeWidth="1.3"
-              strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="1" y="4" width="18" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+            <rect x="3.5" y="7.5" width="5" height="3.5" rx="0.5" stroke="currentColor" strokeWidth="0.8" />
+            <polyline points="24,7 28,11 24,15" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>
 
-      {/* Stats — large, centered, below the reader */}
       <div className="pt-10 pb-8 flex justify-center">
-        <p className="text-[clamp(0.95rem,1.8vw,1.15rem)] text-muted-foreground/80 text-center"
+        <p
+          className="text-[clamp(0.95rem,1.8vw,1.15rem)] text-muted-foreground/80 text-center"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           {cardCount != null && (
