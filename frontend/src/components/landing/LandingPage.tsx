@@ -1,15 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORIES } from '@/lib/constants'
+import { CATEGORIES, formatCategory } from '@/lib/constants'
 import { useCardGrid } from '@/hooks/useCardGrid'
 import { SwipeCard, CARD_H, CARD_W } from './SwipeCard'
+import type { CardGridItem } from '@/types/api'
 
 const SHOW_H    = Math.round(CARD_H * 0.68)  // ~137px — card enters terminal below this
 const SECTION_H = SHOW_H
 
+const CHALLENGE_CATS = CATEGORIES.filter(c => c !== 'other' && c !== 'business')
+
+function buildChallenges(cards: CardGridItem[]) {
+  const best: { cat: string; rate: number; card: string }[] = []
+  for (const cat of CHALLENGE_CATS) {
+    let top = 0, topName = ''
+    for (const c of cards) {
+      const r = c.earnRates[cat]
+      if (r != null && r > top) { top = r; topName = c.name }
+    }
+    if (top > 1) best.push({ cat, rate: top, card: topName })
+  }
+  return best.sort((a, b) => b.rate - a.rate)
+}
+
+function useFlipDisplay(cards: CardGridItem[] | undefined) {
+  const challenges = cards?.length ? buildChallenges(cards) : []
+  const [idx, setIdx] = useState(0)
+  const [flipping, setFlipping] = useState(false)
+
+  useEffect(() => {
+    if (challenges.length < 2) return
+    const timer = setInterval(() => {
+      setFlipping(true)
+      setTimeout(() => {
+        setIdx(i => (i + 1) % challenges.length)
+        setFlipping(false)
+      }, 350)
+    }, 4500)
+    return () => clearInterval(timer)
+  }, [challenges.length])
+
+  return {
+    challenge: challenges[idx % Math.max(1, challenges.length)] ?? null,
+    flipping,
+  }
+}
+
 export function LandingPage() {
   const { data } = useCardGrid({})
   const [dragX, setDragX] = useState(0)
+  const { challenge, flipping } = useFlipDisplay(data)
   const cardCount = data?.length
 
   const featuredCard = data?.find(
@@ -24,22 +64,30 @@ export function LandingPage() {
           className="text-[clamp(2.8rem,6vw,4.8rem)] font-normal leading-[1.08] tracking-tight text-foreground"
           style={{ fontFamily: 'var(--font-display)' }}
         >
-          Know which card<br />to reach for.
+          Every swipe,<br />maximized.
         </h1>
-        <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
-          {cardCount != null && (
-            <>
-              <span>
-                <span className="text-foreground font-semibold tabular-nums">{cardCount}</span>
-                {' '}cards tracked
-              </span>
-              <span className="text-border select-none">·</span>
-            </>
-          )}
-          <span>
-            <span className="text-foreground font-semibold tabular-nums">{CATEGORIES.length}</span>
-            {' '}spend categories
-          </span>
+        {/* Rotating challenge — replaces the old stats line, same small format */}
+        <div className="mt-5" style={{ perspective: 600, minHeight: '1.5rem' }}>
+          <div
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+            style={{
+              transform: flipping ? 'rotateX(90deg)' : 'rotateX(0deg)',
+              opacity: flipping ? 0 : 1,
+              transition: 'transform 350ms cubic-bezier(0.25, 1, 0.5, 1), opacity 250ms ease-out',
+              transformOrigin: 'center bottom',
+            }}
+          >
+            {challenge && (
+              <>
+                <span className="text-foreground font-medium">{formatCategory(challenge.cat)}</span>
+                <span className="text-border select-none">·</span>
+                <span>
+                  <span className="text-foreground font-semibold tabular-nums">{challenge.rate}×</span>
+                  {' or 1×—do you know which card to reach for?'}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </section>
 
@@ -147,13 +195,13 @@ export function LandingPage() {
               animation: 'reader-led 3s ease-in-out infinite',
             }}
           />
-          <span className="text-xs text-muted-foreground/70">drag right to browse →</span>
+          <span className="text-xs text-muted-foreground/70">swipe to browse</span>
           <span className="text-border select-none">·</span>
           <Link
             to="/browse"
             className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2"
           >
-            or browse directly
+            browse all cards
           </Link>
 
           {/* Embossed card-swipe icon — molded into the housing */}
@@ -171,6 +219,23 @@ export function LandingPage() {
               strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
+      </div>
+
+      {/* Stats — large, centered, below the reader */}
+      <div className="pt-10 pb-8 flex justify-center">
+        <p className="text-[clamp(0.95rem,1.8vw,1.15rem)] text-muted-foreground/65 text-center"
+          style={{ fontFamily: 'var(--font-display)' }}
+        >
+          {cardCount != null && (
+            <>
+              <span className="text-foreground font-semibold tabular-nums">{cardCount}</span>
+              {' cards tracked'}
+              <span className="text-border select-none mx-2">·</span>
+            </>
+          )}
+          <span className="text-foreground font-semibold tabular-nums">{CATEGORIES.length}</span>
+          {' spend categories'}
+        </p>
       </div>
 
     </div>

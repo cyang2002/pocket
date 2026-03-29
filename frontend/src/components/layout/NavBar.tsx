@@ -9,7 +9,7 @@ export function NavBar() {
           className="text-sm font-semibold tracking-tight text-primary"
           style={{ fontFamily: 'var(--font-display)', fontWeight: 500 }}
         >
-          Card Optimizer
+          Pocket
         </Link>
         <nav className="flex items-center gap-6">
           <NavLink
